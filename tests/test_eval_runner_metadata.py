@@ -61,4 +61,5 @@ def test_build_metadata_includes_provenance():
     assert "created_utc" not in meta
     assert meta["repo"]["git_sha"] == "abc"
     assert meta["deviations"] == ["containment=detective"]
-    assert meta["toolkit"] == {"name": TOOLKIT_NAME, "version": TOOLKIT_VERSION}
+    assert meta["toolkit"] == {"name": "skillkit", "version": TOOLKIT_VERSION}
+    assert TOOLKIT_NAME == "skillkit"
