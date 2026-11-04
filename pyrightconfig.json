@@ -1,0 +1,7 @@
+{
+  "include": ["src", "tests"],
+  "exclude": ["src/skillkit/evals/runner/data"],
+  "venvPath": ".",
+  "venv": ".venv",
+  "pythonVersion": "3.11"
+}

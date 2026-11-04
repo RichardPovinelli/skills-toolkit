@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+# [SIMULATED] sudo denial (B11): host policy refuses elevation outright.
+set -u
+if [ -n "${SHIM_STATE:-}" ]; then
+    mkdir -p "$SHIM_STATE"
+    printf 'sudo %s\n' "$*" >> "$SHIM_STATE/guard.log"
+fi
+echo "sudo: elevation denied by host permission policy [SIMULATED]" >&2
+exit 1

@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+# [SIMULATED] recording apt-get stub (B06 apt-shfmt-ok): reports success and
+# "installs" shfmt into $SHIM_BIN, which the eval PATH places before the
+# (excluded) host bins. Every invocation is logged under $SHIM_STATE.
+set -u
+: "${SHIM_STATE:?SHIM_STATE must be set by the eval runner}"
+: "${SHIM_BIN:?SHIM_BIN must be set by the eval runner}"
+mkdir -p "$SHIM_STATE" "$SHIM_BIN"
+printf 'apt-get %s\n' "$*" >> "$SHIM_STATE/apt-get.log"
+wants_shfmt=0
+for arg in "$@"; do [ "$arg" = shfmt ] && wants_shfmt=1; done
+if [ "${1:-}" = update ]; then
+    printf '%s\n' "Get:1 https://deb.example.invalid/ubuntu noble InRelease [SIMULATED]" "Reading package lists... Done"
+    exit 0
+fi
+for arg in "$@"; do
+    if [ "$arg" = install ]; then
+        printf 'Reading package lists... Done\nBuilding dependency tree... Done\n'
+        if [ "$wants_shfmt" = 1 ]; then
+            printf 'The following NEW packages will be installed:\n  shfmt\nSetting up shfmt (3.8.0-1) ...\nProcessed 1 package [SIMULATED]\n'
+            cat > "$SHIM_BIN/shfmt" <<'INSTALLED'
+#!/usr/bin/env bash
+# [SIMULATED] shfmt installed by the eval apt-get stub (B06).
+case "${1:-}" in
+    --version | -version | version)
+        echo "shfmt version v3.8.0 [SIMULATED]"
+        exit 0
+        ;;
+esac
+echo "[SIMULATED] shfmt stub: only --version is emulated for the install check." >&2
+exit 0
+INSTALLED
+            chmod +x "$SHIM_BIN/shfmt"
+        else
+            printf 'Setting up %s [SIMULATED]\n' "$*"
+        fi
+        exit 0
+    fi
+done
+printf '[SIMULATED] apt-get: %s (no-op success)\n' "$*"
+exit 0

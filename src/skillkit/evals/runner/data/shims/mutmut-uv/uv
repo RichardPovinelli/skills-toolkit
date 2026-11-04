@@ -1,0 +1,55 @@
+#!/usr/bin/env bash
+# [SIMULATED] uv stub (B26 mutmut-uv): dependency add/lock/sync and mutmut
+# runs are simulated and recorded; "uv run pytest" executes the real runner
+# interpreter so the agent's tests actually run.
+set -u
+: "${SHIM_STATE:?SHIM_STATE must be set by the eval runner}"
+mkdir -p "$SHIM_STATE"
+printf 'uv %s\n' "$*" >> "$SHIM_STATE/uv.log"
+shim_home="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+py="${EVAL_PYTHON:-python3}"
+sub="${1:-}"
+shift || true
+case "$sub" in
+    add)
+        printf '[SIMULATED] uv add: resolved and locked %s\n' "$*"
+        if printf '%s\n' "$@" | grep -q -- '^-.*dev' && [ -f pyproject.toml ]; then
+            "$py" - <<'PYEOF'
+import pathlib
+
+path = pathlib.Path("pyproject.toml")
+text = path.read_text(encoding="utf-8")
+if "mutmut" not in text:
+    if 'dev = ["pytest"]' in text:
+        text = text.replace('dev = ["pytest"]', 'dev = ["pytest", "mutmut"]')
+    else:
+        text += '\n[dependency-groups]\ndev = ["mutmut"]\n'
+    path.write_text(text, encoding="utf-8")
+    print("Added mutmut to dev dependency group in pyproject.toml [SIMULATED]")
+PYEOF
+        fi
+        exit 0
+        ;;
+    lock)
+        echo "[SIMULATED] uv lock: uv.lock updated"
+        exit 0
+        ;;
+    sync)
+        printf '[SIMULATED] uv sync: Resolved 12 packages in 1.20s\nInstalled 12 packages in 40ms\n'
+        exit 0
+        ;;
+    run)
+        cmd="${1:-}"
+        shift || true
+        case "$cmd" in
+            mutmut) exec bash "$shim_home/mutmut-sim" "$@" ;;
+            pytest) exec "$py" -m pytest "$@" ;;
+            "") exit 1 ;;
+            *) exec "$cmd" "$@" ;;
+        esac
+        ;;
+    *)
+        printf '[SIMULATED] uv %s %s\n' "$sub" "$*"
+        exit 0
+        ;;
+esac

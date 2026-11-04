@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# [SIMULATED] Windows PowerShell 5.1 host stub (B07): PSScriptAnalyzer IS
+# present here, installed into the Windows PowerShell module directory.
+set -u
+if [ -n "${SHIM_STATE:-}" ]; then
+    mkdir -p "$SHIM_STATE"
+    printf 'powershell.exe %s\n' "$*" >> "$SHIM_STATE/powershell.log"
+fi
+joined="$*"
+case "$joined" in
+    *Get-Module*PSScriptAnalyzer* | *PSScriptAnalyzer*Get-Module*)
+        printf 'Windows PowerShell 5.1 [SIMULATED host]\n'
+        printf '%s\n\n' 'Directory: C:\Program Files\WindowsPowerShell\Modules'
+        printf '%s\n' \
+            'ModuleType Version    Name              ExportedCommands' \
+            '---------- -------    ----              ----------------' \
+            'Script     1.21.0     PSScriptAnalyzer  {Get-ScriptAnalyzerRule, Invoke-Formatter, Invoke-ScriptAnalyzer}'
+        exit 0
+        ;;
+esac
+case "${1:-}" in
+    -Version)
+        echo "5.1.19041.6216 [SIMULATED]"
+        exit 0
+        ;;
+esac
+echo "[SIMULATED] powershell.exe stub (Windows PowerShell 5.1): supports module/version queries only; script execution is not emulated." >&2
+exit 0

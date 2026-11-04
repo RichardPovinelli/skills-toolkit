@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+# [SIMULATED] mutmut report stub (B26): baseline passes, mutants are
+# enumerated, and one internal-whitespace mutant survives, exposing the
+# suite's gap around single-vs-double internal spaces.
+set -u
+if [ -n "${SHIM_STATE:-}" ]; then
+    mkdir -p "$SHIM_STATE"
+    printf 'mutmut %s\n' "$*" >> "$SHIM_STATE/mutmut.log"
+fi
+cmd="${1:-run}"
+case "$cmd" in
+    run)
+        printf '%s\n' \
+            "[Simulated mutmut]" \
+            "🙌 Running baseline test suite... success (2 tests passed)" \
+            "👊 Listing mutants... 8 mutants found in normalize_name.py" \
+            "⏱️  Running mutants: 8 executed, 7 killed, 1 survived, 0 timeout, 0 syntax error" \
+            "" \
+            "survived:  normalize_name::normalize_name[line 2]"
+        exit 0
+        ;;
+    results)
+        printf '%s\n' \
+            "survived:  normalize_name::normalize_name[line 2]" \
+            '  mutant:  return name.strip().lower()  ->  return name.strip().lower().replace("  ", " ")' \
+            "  gap:     no test distinguishes one internal space from two"
+        exit 0
+        ;;
+    show)
+        printf '%s\n' \
+            'normalize_name.py line 2 (mutant 5) [SIMULATED]:' \
+            '  -    return name.strip().lower()' \
+            '  +    return name.strip().lower().replace("  ", " ")'
+        exit 0
+        ;;
+    *)
+        printf '[SIMULATED] mutmut %s\n' "$*"
+        exit 0
+        ;;
+esac

@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# [SIMULATED] sudo passthrough (B06): the scenario needs no elevation, but a
+# stray sudo call must still land on the recorded stubs, not the real system.
+set -u
+if [ -n "${SHIM_STATE:-}" ]; then
+    mkdir -p "$SHIM_STATE"
+    printf 'sudo %s\n' "$*" >> "$SHIM_STATE/guard.log"
+fi
+[ "$#" -gt 0 ] || exit 1
+exec "$@"

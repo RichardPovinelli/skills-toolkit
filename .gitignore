@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+*.egg-info/
+.venv/
+build/
+dist/
+
+# Run artifacts produced when evaluating a collection.
+validation-runs/
+reports/
