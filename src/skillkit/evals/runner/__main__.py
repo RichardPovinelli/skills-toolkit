@@ -111,11 +111,7 @@ def main(argv: list[str] | None = None, repo_root: Path | None = None) -> int:
 
     try:
         choice = model_selection.resolve_model(requested=args.model)
-        if (
-            args.no_local_fallback
-            and args.model is None
-            and choice.reason != "local-available"
-        ):
+        if args.no_local_fallback and args.model is None and choice.reason != "local-available":
             raise model_selection.ModelSelectionError(
                 f"local model is unavailable ({choice.reason}); "
                 "refusing to use the hosted fallback because --no-local-fallback was set"
@@ -262,9 +258,7 @@ def _run_batch(
         if not batch_dir.exists():
             break
         offset_seconds += 1
-    _, md_path = batch.write_aggregate(
-        batch_dir, entries, started_central=started_central
-    )
+    _, md_path = batch.write_aggregate(batch_dir, entries, started_central=started_central)
     print(f"Batch report: {md_path}")
     if not skip_review:
         _refresh_review(layout, runs_dir)

@@ -46,9 +46,17 @@ class PolicyCheck:
 
 POLICY_CHECKS = (
     PolicyCheck("Run coverage only when it is explicitly requested", "test-coverage"),
-    PolicyCheck("Preserve the separation between human-edited direct dependency intent and generated lock or resolved state", "tool-and-dependency-installation"),
-    PolicyCheck("Order authorized multi-tool cleanup as lint-fix first, then format, then static or type check", "static-analysis-and-linting"),
-    PolicyCheck("Never write a test whose only assertion is that a value equals its current value", "test-driven-development"),
+    PolicyCheck(
+        "Preserve the separation between human-edited direct dependency intent and generated lock or resolved state",
+        "tool-and-dependency-installation",
+    ),
+    PolicyCheck(
+        "Order authorized multi-tool cleanup as lint-fix first, then format, then static or type check",
+        "static-analysis-and-linting",
+    ),
+    PolicyCheck(
+        "Never write a test whose only assertion is that a value equals its current value", "test-driven-development"
+    ),
 )
 
 
@@ -107,9 +115,7 @@ class ValidationPolicy:
             ),
             readme=_optional_path(raw.get("readme", defaults.readme)),
             matrix=_optional_path(raw.get("matrix", defaults.matrix)),
-            copilot_instructions=_optional_path(
-                raw.get("copilot_instructions", defaults.copilot_instructions)
-            ),
+            copilot_instructions=_optional_path(raw.get("copilot_instructions", defaults.copilot_instructions)),
             manifests=tuple(str(entry) for entry in raw.get("manifests", defaults.manifests)),
             policy_checks=checks or defaults.policy_checks,
         )
@@ -182,9 +188,7 @@ def headings_outside_fences(text: str) -> list[str]:
     return headings
 
 
-def validate_skill_headings(
-    text: str, path: Path, policy: ValidationPolicy | None = None
-) -> list[str]:
+def validate_skill_headings(text: str, path: Path, policy: ValidationPolicy | None = None) -> list[str]:
     """Require each configured heading exactly once."""
     policy = policy if policy is not None else ValidationPolicy()
     headings = headings_outside_fences(text)
@@ -192,14 +196,10 @@ def validate_skill_headings(
     for required in policy.required_headings:
         count = sum(heading == required for heading in headings)
         if count != 1:
-            errors.append(
-                f"{path}: expected exactly one {required!r} heading, found {count}"
-            )
+            errors.append(f"{path}: expected exactly one {required!r} heading, found {count}")
     for alias, canonical in policy.rejected_headings:
         if any(heading == alias for heading in headings):
-            errors.append(
-                f"{path}: use {canonical!r} instead of a bare {alias!r} heading"
-            )
+            errors.append(f"{path}: use {canonical!r} instead of a bare {alias!r} heading")
     return errors
 
 
@@ -268,16 +268,11 @@ def validate_skill(
             ref_lines = reference.read_text().splitlines()
             if len(ref_lines) > policy.max_reference_lines and "## Contents" not in ref_lines:
                 errors.append(
-                    f"{reference}: references over {policy.max_reference_lines} lines "
-                    "require a Contents section"
+                    f"{reference}: references over {policy.max_reference_lines} lines require a Contents section"
                 )
 
     for check in policy.policy_checks:
-        if (
-            check.phrase in text
-            and skill_name != check.owner
-            and skill_name not in check.intrinsic_users
-        ):
+        if check.phrase in text and skill_name != check.owner and skill_name not in check.intrinsic_users:
             warnings.append(f"{path}: duplicates policy owned by {check.owner!r}: {check.phrase!r}")
 
     return errors, warnings
@@ -449,7 +444,7 @@ def main(
     root: Path | None = None,
     policy: ValidationPolicy | None = None,
 ) -> int:
-    parser = argparse.ArgumentParser(prog="validate_skills")
+    parser = argparse.ArgumentParser(prog="skillkit-validate")
     parser.add_argument(
         "--root",
         type=Path,
@@ -476,23 +471,17 @@ def main(
 
     skill_names = frozenset(path.parent.name for path in skill_files)
     for path in skill_files:
-        skill_errors, skill_warnings = validate_skill(
-            path, skills_root=skills_root, policy=collection_policy
-        )
+        skill_errors, skill_warnings = validate_skill(path, skills_root=skills_root, policy=collection_policy)
         errors.extend(skill_errors)
         warnings.extend(skill_warnings)
 
     if collection_policy.matrix is not None:
         errors.extend(
-            validate_matrix(
-                skill_names, collection_root / collection_policy.matrix, policy=collection_policy
-            )
+            validate_matrix(skill_names, collection_root / collection_policy.matrix, policy=collection_policy)
         )
     errors.extend(validate_manifests(collection_root, policy=collection_policy))
     errors.extend(validate_readme(skill_names, collection_root, policy=collection_policy))
-    errors.extend(
-        validate_copilot_instructions(skill_names, collection_root, policy=collection_policy)
-    )
+    errors.extend(validate_copilot_instructions(skill_names, collection_root, policy=collection_policy))
 
     for warning in warnings:
         print(f"WARNING: {warning}")

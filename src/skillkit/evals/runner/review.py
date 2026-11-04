@@ -41,11 +41,7 @@ def generate(
     """
     case_ids = sorted(p.stem for p in Path(cases_dir).glob("*.toml"))
     rubric_rows = _load_rubric_rows(_rubric_location(root, rubric_path))
-    completed = (
-        batch.discover_completed(Path(runs_dir), case_ids)
-        if Path(runs_dir).is_dir()
-        else {}
-    )
+    completed = batch.discover_completed(Path(runs_dir), case_ids) if Path(runs_dir).is_dir() else {}
 
     lines: list[str] = [
         "# Review brief",
@@ -64,9 +60,7 @@ def generate(
         if not isinstance(report, dict):
             report = {}
         outcome = done.outcome if done else "_"
-        run_name = (
-            f"[{done.run.name}]({_rel(done.run, out_path.parent)})" if done else "_"
-        )
+        run_name = f"[{done.run.name}]({_rel(done.run, out_path.parent)})" if done else "_"
         score_values = _auto_scores(done, report)
         lines.append(
             f"| {case_id} | {outcome} | {run_name} | "
@@ -93,9 +87,7 @@ def generate(
     return md
 
 
-def _case_section(
-    case_id, case, done, report, rubric_rows, score_values, out_path, scores_path
-) -> str:
+def _case_section(case_id, case, done, report, rubric_rows, score_values, out_path, scores_path) -> str:
     lines = [f"## {case_id}", ""]
     lines += ["### Spec", ""]
     lines += [
@@ -103,11 +95,7 @@ def _case_section(
         f"- model: {case.model}",
         f"- timeout: {case.timeout_s}s",
     ]
-    exposure = (
-        "full catalog"
-        if case.exposure.full_catalog
-        else ", ".join(case.exposure.skill_names)
-    )
+    exposure = "full catalog" if case.exposure.full_catalog else ", ".join(case.exposure.skill_names)
     lines.append(f"- exposure: {exposure}")
     if case.canned_replies:
         lines.append(f"- canned replies: {list(case.canned_replies)}")
@@ -124,9 +112,7 @@ def _case_section(
         lines.append(f"- inline file: {inline.path}")
     if case.checks:
         lines.append("- checks:")
-        lines += [
-            f"  - `{check.name}` {_params(check.params)}" for check in case.checks
-        ]
+        lines += [f"  - `{check.name}` {_params(check.params)}" for check in case.checks]
     lines.append("")
 
     if case_id in rubric_rows:
@@ -158,9 +144,7 @@ def _model_analysis_lines(case_id: str, case, done, report) -> list[str]:
         return lines
 
     if not text or not str(text).strip():
-        lines.append(
-            "_analysis unavailable: the local model did not return any output._"
-        )
+        lines.append("_analysis unavailable: the local model did not return any output._")
         lines.append("")
         return lines
 
@@ -196,9 +180,7 @@ def _verdict_lines(done, report) -> list[str]:
     elif isinstance(prechecks, dict):
         for item in prechecks.get("checks") or ():
             if isinstance(item, dict) and "name" in item:
-                lines.append(
-                    f"- precheck `{item['name']}`: {'ok' if item.get('ok') else 'FAILED'}"
-                )
+                lines.append(f"- precheck `{item['name']}`: {'ok' if item.get('ok') else 'FAILED'}")
     lines.append("")
     return lines
 
@@ -211,12 +193,8 @@ def _activation_lines(done) -> list[str]:
         return lines + ["_(unreadable: events.jsonl)_", ""]
     facts = transcript.parse_events(events)
     lines.append(f"- skills read (completed): {', '.join(facts.skills_read) or 'none'}")
-    incomplete = [
-        name for name in facts.skills_dirs_seen if name not in facts.skills_read
-    ]
-    lines.append(
-        f"- skills requested but not completed: {', '.join(incomplete) or 'none'}"
-    )
+    incomplete = [name for name in facts.skills_dirs_seen if name not in facts.skills_read]
+    lines.append(f"- skills requested but not completed: {', '.join(incomplete) or 'none'}")
     lines.append(f"- files touched: {', '.join(facts.paths_touched) or 'none'}")
     if facts.malformed_lines:
         lines.append(f"- malformed event lines: {facts.malformed_lines}")
@@ -264,9 +242,7 @@ def _params(params: dict) -> str:
 
 def _rel(path: Path, base: Path) -> str:
     try:
-        return PurePosixPath(
-            os.path.relpath(Path(path).resolve(), Path(base).resolve())
-        ).as_posix()
+        return PurePosixPath(os.path.relpath(Path(path).resolve(), Path(base).resolve())).as_posix()
     except ValueError:
         return str(path)
 
@@ -291,9 +267,7 @@ def _model_analysis_text(case_id: str, case, done, report: dict) -> str:
         raise RuntimeError("no completed run available")
 
     report_model = report.get("model") if isinstance(report, dict) else None
-    model_name = (
-        report_model or getattr(case, "model", "") or "llama-router/qwen3.8-27b-q6"
-    )
+    model_name = report_model or getattr(case, "model", "") or "llama-router/qwen3.8-27b-q6"
     if not model_name.startswith("llama-router/"):
         raise RuntimeError("analysis unavailable: review analysis is local-only")
     if not shutil.which("opencode"):
@@ -309,12 +283,8 @@ def _model_analysis_text(case_id: str, case, done, report: dict) -> str:
     if not isinstance(turns, list):
         raise RuntimeError("evidence unavailable: turns.json")
     try:
-        events = (run_dir / "events.jsonl").read_text(
-            encoding="utf-8", errors="replace"
-        )
-        conversation = (run_dir / "conversation.log").read_text(
-            encoding="utf-8", errors="replace"
-        )
+        events = (run_dir / "events.jsonl").read_text(encoding="utf-8", errors="replace")
+        conversation = (run_dir / "conversation.log").read_text(encoding="utf-8", errors="replace")
     except OSError as exc:
         artifact = Path(exc.filename).name if exc.filename else "run artifact"
         raise RuntimeError(f"evidence unavailable: {artifact}") from exc
@@ -380,9 +350,7 @@ def _model_analysis_text(case_id: str, case, done, report: dict) -> str:
     except (OSError, subprocess.SubprocessError) as exc:
         raise RuntimeError(f"model unavailable: {exc}") from exc
     if completed.returncode != 0:
-        raise RuntimeError(
-            f"model unavailable: opencode exited with status {completed.returncode}"
-        )
+        raise RuntimeError(f"model unavailable: opencode exited with status {completed.returncode}")
 
     text = (completed.stdout or "").strip()
     if not text:
@@ -414,9 +382,7 @@ def _extract_model_analysis_text(payload):
         return "\n".join(part for part in pieces if part)
     if isinstance(payload, dict):
         if payload.get("type") == "text":
-            return _extract_model_analysis_text(
-                (payload.get("part") or {}).get("text", "")
-            )
+            return _extract_model_analysis_text((payload.get("part") or {}).get("text", ""))
         if payload.get("type"):
             return ""
         for key in ("text", "content", "answer", "response", "output", "message"):
@@ -446,7 +412,13 @@ def _auto_scores(done, report: dict) -> dict[str, str]:
     if done and isinstance(report, dict):
         failures = report.get("failures") or ()
         owner_failed = any("owner_read_" in str(f) for f in failures)
-        values["owner-routing"] = "FAIL" if owner_failed else "PASS" if outcome == "PASS" or not any("turn 1: agent process exited with code 1" in str(f) for f in failures) else "FAIL"
+        values["owner-routing"] = (
+            "FAIL"
+            if owner_failed
+            else "PASS"
+            if outcome == "PASS" or not any("turn 1: agent process exited with code 1" in str(f) for f in failures)
+            else "FAIL"
+        )
 
         note_parts = []
         if report.get("failures"):

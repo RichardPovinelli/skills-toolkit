@@ -138,11 +138,7 @@ def _no_forbidden_reads(ctx: CheckContext, params: dict) -> list[str]:
         # forms are then compared with the same allow-roots so provisioned
         # state such as requirements/uploader.md is not mistaken for eval
         # material.
-        resolved = (
-            path
-            if path.startswith("/")
-            else str((Path(ctx.workspace_dir) / path).resolve())
-        )
+        resolved = path if path.startswith("/") else str((Path(ctx.workspace_dir) / path).resolve())
         if not _under_allowed(resolved, ctx):
             failures.append(f"tool operated outside the isolated workspace: {path}")
     for entry in ctx.facts.entries:
@@ -204,15 +200,10 @@ def _workspace_scope(ctx: CheckContext, params: dict) -> list[str]:
     files = _workspace_files(root)
     failures: list[str] = []
     if not any(_matches_any(path, require_any) for path in files):
-        failures.append(
-            "none of the required artifacts exist in the workspace: "
-            + ", ".join(require_any)
-        )
+        failures.append("none of the required artifacts exist in the workspace: " + ", ".join(require_any))
 
     forbidden = [path for path in files if _matches_any(path, forbid)]
-    failures.extend(
-        f"later-stage artifact exists in the workspace: {path}" for path in forbidden
-    )
+    failures.extend(f"later-stage artifact exists in the workspace: {path}" for path in forbidden)
 
     for name in protected:
         if not (root / name).exists():
@@ -220,9 +211,7 @@ def _workspace_scope(ctx: CheckContext, params: dict) -> list[str]:
         under = [path for path in files if path == name or path.startswith(name + "/")]
         allowed = [path for path in under if _matches_any(path, require_any)]
         if not allowed:
-            failures.append(
-                f"protected top-level path '{name}' exists without a required artifact"
-            )
+            failures.append(f"protected top-level path '{name}' exists without a required artifact")
         failures.extend(
             f"protected top-level path '{name}' contains an out-of-scope artifact: {path}"
             for path in under

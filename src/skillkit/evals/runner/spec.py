@@ -42,9 +42,7 @@ def _require_data_relative(value: str, field: str = "fixture src") -> str:
     """Fixtures are resolved under the collection data directory, never outside it."""
     path = PurePosixPath(value)
     if not value or path.is_absolute() or ".." in path.parts:
-        raise SpecError(
-            f"{field} must be relative to the collection data directory without '..': got {value!r}"
-        )
+        raise SpecError(f"{field} must be relative to the collection data directory without '..': got {value!r}")
     return value
 
 
@@ -94,14 +92,10 @@ def load_case(case_id: str, cases_dir: Path) -> CaseSpec:
     if not isinstance(shims, str):
         raise SpecError("case spec field 'shims' must be a string")
     if shims and not _SHIMS_NAME_RE.fullmatch(shims):
-        raise SpecError(
-            f"case spec field 'shims' must be a lowercase shim-set name [a-z][a-z0-9_-]*, got {shims!r}"
-        )
+        raise SpecError(f"case spec field 'shims' must be a lowercase shim-set name [a-z][a-z0-9_-]*, got {shims!r}")
     skill_routing = raw.get("skill_routing", False)
     if not isinstance(skill_routing, bool):
-        raise SpecError(
-            f"case spec field 'skill_routing' must be a boolean, got {type(skill_routing).__name__}"
-        )
+        raise SpecError(f"case spec field 'skill_routing' must be a boolean, got {type(skill_routing).__name__}")
     exposure_raw = raw.get("exposure", {})
     exposure = Exposure(
         full_catalog=exposure_raw.get("full_catalog", False),

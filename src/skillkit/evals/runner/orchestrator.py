@@ -28,14 +28,10 @@ from skillkit.evals.runner.layout import CollectionLayout
 from skillkit.evals.runner.types import DEFAULT_MODEL, CaseSpec
 
 
-def _deviations_for(
-    case: CaseSpec, requested_model: str, model_reason: str
-) -> list[str]:
+def _deviations_for(case: CaseSpec, requested_model: str, model_reason: str) -> list[str]:
     deviations = list(DEVIATIONS)
     if case.model != requested_model:
-        deviations.append(
-            f"model-fallback={case.model} (requested {requested_model}; {model_reason})"
-        )
+        deviations.append(f"model-fallback={case.model} (requested {requested_model}; {model_reason})")
     if case.shims:
         deviations.append(
             f"simulated-tool-env={case.shims} (shim PATH + $SHIM_STATE; install/tool "
@@ -238,9 +234,7 @@ def _write_report(
         "host": host,
         "duration_s": round(duration_s, 1),
     }
-    (paths.run_dir / "report.json").write_text(
-        json.dumps(report, indent=2) + "\n", encoding="utf-8"
-    )
+    (paths.run_dir / "report.json").write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
 
 
 def _append_turn_marker(events_path: Path, turn_no: int, user_text: str) -> None:
@@ -256,19 +250,11 @@ def _parse_events(events_path: Path) -> transcript.RunFacts:
     return transcript.parse_events(lines)
 
 
-def _collect_evidence(
-    paths: workspace.RunPaths, pre_snapshot
-) -> tuple[transcript.RunFacts, tuple[str, ...]]:
+def _collect_evidence(paths: workspace.RunPaths, pre_snapshot) -> tuple[transcript.RunFacts, tuple[str, ...]]:
     events_path = paths.run_dir / "events.jsonl"
-    lines = (
-        events_path.read_text(encoding="utf-8", errors="replace").splitlines()
-        if events_path.exists()
-        else []
-    )
+    lines = events_path.read_text(encoding="utf-8", errors="replace").splitlines() if events_path.exists() else []
     facts = transcript.parse_events(lines)
-    diff = tuple(
-        workspace.diff_snapshots(pre_snapshot, workspace.snapshot(paths.workspace_dir))
-    )
+    diff = tuple(workspace.diff_snapshots(pre_snapshot, workspace.snapshot(paths.workspace_dir)))
     return facts, diff
 
 
@@ -297,9 +283,7 @@ def _write_artifacts(
     prechecks = checks.evaluate(case.checks, ctx)
     _touch_if_missing(paths.run_dir / "events.jsonl")
     _touch_if_missing(paths.run_dir / "stderr.log")
-    (paths.run_dir / "conversation.log").write_text(
-        transcript.render_conversation_log(facts), encoding="utf-8"
-    )
+    (paths.run_dir / "conversation.log").write_text(transcript.render_conversation_log(facts), encoding="utf-8")
     _write_json(paths.run_dir / "prechecks.json", prechecks)
     if turns is not None:
         _write_json(paths.run_dir / "turns.json", turns)
@@ -319,17 +303,13 @@ def _write_artifacts(
     _write_json(paths.run_dir / "metadata.json", meta)
 
 
-def _failure_list(
-    case: CaseSpec, results: list[driver.DriverResult], ctx: checks.CheckContext
-) -> list[str]:
+def _failure_list(case: CaseSpec, results: list[driver.DriverResult], ctx: checks.CheckContext) -> list[str]:
     failures: list[str] = []
     for index, result in enumerate(results, start=1):
         if result.timed_out:
             failures.append(f"turn {index} timed out after {case.timeout_s}s")
         elif result.exit_code not in (0, None):
-            failures.append(
-                f"turn {index}: agent process exited with code {result.exit_code}"
-            )
+            failures.append(f"turn {index}: agent process exited with code {result.exit_code}")
     for name, verdict in checks.evaluate(case.checks, ctx).items():
         failures.extend(f"{name}: {f}" for f in verdict["failures"])
     return failures

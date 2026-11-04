@@ -140,15 +140,9 @@ def _skill_names(paths: RunPaths) -> list[str]:
     if exposure.full_catalog:
         skills_root = paths.collection.skills_dir
         return sorted(p.name for p in skills_root.iterdir() if p.is_dir())
-    missing = [
-        name
-        for name in exposure.skill_names
-        if not (paths.collection.skills_dir / name).is_dir()
-    ]
+    missing = [name for name in exposure.skill_names if not (paths.collection.skills_dir / name).is_dir()]
     if missing:
-        raise WorkspaceError(
-            f"case '{paths.case.case_id}' exposes unknown skills: {', '.join(missing)}"
-        )
+        raise WorkspaceError(f"case '{paths.case.case_id}' exposes unknown skills: {', '.join(missing)}")
     return list(exposure.skill_names)
 
 
@@ -291,15 +285,10 @@ def write_home_config(paths: RunPaths, model: str) -> None:
             ]
         )
     else:
-        raise WorkspaceError(
-            f"unsupported eval model provider {provider!r}: expected "
-            "'llama-router' or 'opencode'"
-        )
+        raise WorkspaceError(f"unsupported eval model provider {provider!r}: expected 'llama-router' or 'opencode'")
     (home_config_dir / "opencode.jsonc").write_text(config, encoding="utf-8")
     if paths.case.exposure.full_catalog or paths.case.skill_routing:
-        (home_config_dir / "AGENTS.md").write_text(
-            SKILL_ROUTING_INSTRUCTION, encoding="utf-8"
-        )
+        (home_config_dir / "AGENTS.md").write_text(SKILL_ROUTING_INSTRUCTION, encoding="utf-8")
     _empty_home_dirs(paths.home_dir)
 
 
@@ -365,9 +354,7 @@ def prepare_shim_env(paths: RunPaths) -> dict[str, str] | None:
         return None
     source_set = paths.shim_sets_root / paths.case.shims
     if not source_set.is_dir():
-        raise WorkspaceError(
-            f"shim set missing: '{paths.case.shims}' (expected {source_set})"
-        )
+        raise WorkspaceError(f"shim set missing: '{paths.case.shims}' (expected {source_set})")
     # Stage the set inside the run dir: the repo lives under the protected
     # 'src/evals' tree, so PATH must reference the staged copy, never the source
     # (a curious agent listing PATH directories would otherwise touch graded
@@ -405,15 +392,11 @@ def leak_guard(paths: RunPaths, allowed: frozenset[str] = frozenset()) -> None:
             entry = Path(root) / name
             top = rel_dir.parts[0] if rel_dir.parts else name
             if name in FORBIDDEN_NAMES and top not in allowed:
-                raise LeakError(
-                    f"forbidden name '{name}' inside agent workspace: {entry}"
-                )
+                raise LeakError(f"forbidden name '{name}' inside agent workspace: {entry}")
             if entry.is_symlink():
                 target = entry.resolve()
                 if target != skills_root and skills_root not in target.parents:
-                    raise LeakError(
-                        f"symlink '{name}' escapes the exposed skills tree: {target}"
-                    )
+                    raise LeakError(f"symlink '{name}' escapes the exposed skills tree: {target}")
 
 
 def snapshot(root: Path) -> dict[str, tuple[bool, int, int]]:
@@ -423,9 +406,7 @@ def snapshot(root: Path) -> dict[str, tuple[bool, int, int]]:
         # opencode maintains its own git snapshot repo in the agent root and
         # commits to it each step; that churn is infrastructure, not an agent
         # edit, so it must not trip the workspace_unchanged check.
-        dir_names[:] = [
-            d for d in dir_names if d not in {".git", "__pycache__", ".pytest_cache"}
-        ]
+        dir_names[:] = [d for d in dir_names if d not in {".git", "__pycache__", ".pytest_cache"}]
         base = Path(dir_path)
         for name in dir_names + file_names:
             if name.endswith(".pyc") or name in {"__pycache__", ".pytest_cache"}:
@@ -437,9 +418,7 @@ def snapshot(root: Path) -> dict[str, tuple[bool, int, int]]:
     return entries
 
 
-def diff_snapshots(
-    pre: dict[str, tuple[bool, int, int]], post: dict[str, tuple[bool, int, int]]
-) -> list[str]:
+def diff_snapshots(pre: dict[str, tuple[bool, int, int]], post: dict[str, tuple[bool, int, int]]) -> list[str]:
     changed = set(pre) ^ set(post)
     changed |= {key for key in set(pre) & set(post) if pre[key] != post[key]}
     return sorted(changed)
