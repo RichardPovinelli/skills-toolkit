@@ -1,5 +1,5 @@
 {
-  "include": ["src", "tests"],
+  "include": ["src"],
   "exclude": ["src/skillkit/evals/runner/data"],
   "venvPath": ".",
   "venv": ".venv",
