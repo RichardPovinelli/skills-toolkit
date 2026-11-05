@@ -32,6 +32,7 @@ def run_shim(set_name: str, tool: str, args: list[str], tmp_path: Path, **extra_
     env.update(extra_env)
     proc = subprocess.run(
         [str(shim_dir / tool), *args],
+        check=False,
         capture_output=True,
         text=True,
         env=env,
@@ -56,7 +57,13 @@ def test_apt_shfmt_ok_installs_shfmt_into_shim_bin(tmp_path):
     assert "Setting up shfmt" in proc.stdout
     installed = bin_dir / "shfmt"
     assert installed.exists()
-    ver = subprocess.run([str(installed), "--version"], capture_output=True, text=True, timeout=30)
+    ver = subprocess.run(
+        [str(installed), "--version"],
+        check=False,
+        capture_output=True,
+        text=True,
+        timeout=30,
+    )
     assert ver.returncode == 0
     assert "SIMULATED" in ver.stdout
     assert "apt-get install -y shfmt" in (state / "apt-get.log").read_text()
@@ -109,6 +116,7 @@ def test_uv_stub_adds_mutmut_to_dev_group(tmp_path):
     }
     proc = subprocess.run(
         [str(shim_dir / "uv"), "add", "--dev", "mutmut"],
+        check=False,
         capture_output=True,
         text=True,
         env=env,
@@ -133,6 +141,7 @@ def test_uv_stub_runs_real_pytest_and_simulated_mutmut(tmp_path):
     }
     pytest_proc = subprocess.run(
         [str(shim_dir / "uv"), "run", "pytest", str(test_file), "-q"],
+        check=False,
         capture_output=True,
         text=True,
         env=env,
@@ -142,6 +151,7 @@ def test_uv_stub_runs_real_pytest_and_simulated_mutmut(tmp_path):
     assert pytest_proc.returncode == 0, pytest_proc.stdout + pytest_proc.stderr
     mutmut_proc = subprocess.run(
         [str(shim_dir / "uv"), "run", "mutmut", "run"],
+        check=False,
         capture_output=True,
         text=True,
         env=env,

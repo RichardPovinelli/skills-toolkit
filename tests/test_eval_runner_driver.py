@@ -9,15 +9,22 @@ from skillkit.evals.runner import driver
 
 
 class FakeCi:
-    def __init__(self, result=None, error=None):
+    def __init__(
+        self,
+        result: subprocess.CompletedProcess | None = None,
+        error: BaseException | None = None,
+    ) -> None:
         self.result = result
         self.error = error
-        self.calls = []
+        self.calls: list[tuple[list[str], dict]] = []
 
-    def __call__(self, argv, **kwargs):
+    def __call__(
+        self, argv: list[str], **kwargs: object
+    ) -> subprocess.CompletedProcess:
         self.calls.append((argv, kwargs))
         if self.error:
             raise self.error
+        assert self.result is not None
         return self.result
 
 

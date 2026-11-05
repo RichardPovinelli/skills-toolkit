@@ -575,7 +575,10 @@ def test_batch_with_case_errors_keeps_completed_evidence_and_rubric_data(
     )
     completed_run = "20261011T040000Z-B98"
 
-    def run_case(case_id, repo_root, runs_dir=None, **kwargs):
+    def run_case(
+        case_id: str, repo_root: Path, runs_dir: Path | None = None, **kwargs: object
+    ) -> RunResult:
+        assert runs_dir is not None
         if case_id == "B99":
             raise ValueError("pre-flight failure")
         run = make_completed_run(runs_dir, completed_run, "PASS")

@@ -50,7 +50,10 @@ def skill_line(name="alpha"):
     )
 
 
-def make_executor(lines=(), result=DriverResult(0, False)):
+def make_executor(lines=(), result: DriverResult | None = None):
+    if result is None:
+        result = DriverResult(0, False)
+
     def execute(**kwargs):
         Path(kwargs["events_path"]).write_text("".join(line + "\n" for line in lines))
         return result
@@ -203,25 +206,33 @@ def write_raw_case(repo: Path, body: str, case_id: str = "B98") -> None:
     (cases_dir / f"{case_id}.toml").write_text(body, encoding="utf-8")
 
 
-def make_scripted_executor(
-    turn_events: list[list[str]], turn_files: dict[int, list[str]] = None
-):
-    calls: list[dict] = []
-    turn_files = turn_files or {}
+class ScriptedExecutor:
+    def __init__(
+        self,
+        turn_events: list[list[str]],
+        turn_files: dict[int, list[str]] | None = None,
+    ) -> None:
+        self.turn_events = turn_events
+        self.turn_files = turn_files or {}
+        self.calls: list[dict] = []
 
-    def execute(**kwargs):
-        calls.append(kwargs)
+    def __call__(self, **kwargs):
+        self.calls.append(kwargs)
         with open(kwargs["events_path"], "a", encoding="utf-8") as handle:
-            for line in turn_events[len(calls) - 1]:
-                handle.write(line + "\n")
-        for name in turn_files.get(len(calls), []):
+            handle.writelines(
+                line + "\n" for line in self.turn_events[len(self.calls) - 1]
+            )
+        for name in self.turn_files.get(len(self.calls), []):
             Path(kwargs["cwd"], name).write_text(
                 "def test_x(): pass\n", encoding="utf-8"
             )
         return DriverResult(0, False)
 
-    execute.calls = calls
-    return execute
+
+def make_scripted_executor(
+    turn_events: list[list[str]], turn_files: dict[int, list[str]] | None = None
+) -> ScriptedExecutor:
+    return ScriptedExecutor(turn_events, turn_files)
 
 
 def test_multiturn_continues_while_agent_asks_and_writes_turns_json(tmp_path) -> None:

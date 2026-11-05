@@ -28,7 +28,7 @@ def make_ctx(skills_read=(), paths_touched=(), texts=(), catalog=("alpha", "beta
 
 
 def run_check(name, ctx, **params):
-    result = checks.evaluate([Check(name=name, params=params)], ctx)
+    result = checks.evaluate((Check(name=name, params=params),), ctx)
     return result[name]["failures"]
 
 

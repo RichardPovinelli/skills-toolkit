@@ -1,6 +1,7 @@
 {
-  "include": ["src"],
+  "include": ["src", "tests"],
   "exclude": ["src/skillkit/evals/runner/data"],
+  "typeCheckingMode": "standard",
   "venvPath": ".",
   "venv": ".venv",
   "pythonVersion": "3.11"

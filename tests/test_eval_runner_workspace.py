@@ -1,6 +1,7 @@
 """Tests for skillkit.evals.runner.workspace run isolation (build, provision, guard)."""
 
 from pathlib import Path
+from typing import Any
 
 import pytest
 
@@ -22,13 +23,13 @@ def make_repo(tmp_path: Path) -> Path:
     return repo
 
 
-def make_case(**overrides) -> CaseSpec:
-    base = dict(
-        case_id="B98",
-        prompt="p",
-        exposure=Exposure(full_catalog=True),
-        fixtures=(Fixture(src="fixtures/sample.txt", dest="input/sample.txt"),),
-    )
+def make_case(**overrides: Any) -> CaseSpec:
+    base: dict[str, Any] = {
+        "case_id": "B98",
+        "prompt": "p",
+        "exposure": Exposure(full_catalog=True),
+        "fixtures": (Fixture(src="fixtures/sample.txt", dest="input/sample.txt"),),
+    }
     base.update(overrides)
     return CaseSpec(**base)
 

@@ -6,11 +6,10 @@ from pathlib import Path
 
 import pytest
 
-from skillkit.evals.runner import model_selection, spec, workspace
 from skillkit.evals.runner import __main__ as runner_main
+from skillkit.evals.runner import spec, workspace
 from skillkit.evals.runner.model_selection import ModelChoice
 from skillkit.evals.runner.orchestrator import RunResult
-
 
 pytestmark = pytest.mark.usefixtures("local_model_choice")
 
@@ -22,7 +21,10 @@ def test_single_case_defaults_collection_to_working_directory(tmp_path, monkeypa
     monkeypatch.chdir(tmp_path)
     seen = {}
 
-    def fake_run_case(case_id, root, runs_dir=None, **kwargs):
+    def fake_run_case(
+        case_id: str, root: Path, runs_dir: Path | None = None, **kwargs: object
+    ) -> RunResult:
+        assert runs_dir is not None
         case = spec.load_case(case_id, root / "validation" / "cases")
         seen["root"] = root
         seen["runs_dir"] = runs_dir
@@ -44,7 +46,10 @@ def test_collection_flag_selects_another_checkout(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     seen = {}
 
-    def fake_run_case(case_id, root, runs_dir=None, **kwargs):
+    def fake_run_case(
+        case_id: str, root: Path, runs_dir: Path | None = None, **kwargs: object
+    ) -> RunResult:
+        assert runs_dir is not None
         seen["root"] = root
         seen["runs_dir"] = runs_dir
         return RunResult(case_id, "PASS", runs_dir / "R1", ())
@@ -103,7 +108,10 @@ def test_all_discovers_cases_independent_of_launch_directory(
     monkeypatch.setenv("PWD", str(tmp_path))
     seen = []
 
-    def fake_run_case(case_id, root, runs_dir=None, **kwargs):
+    def fake_run_case(
+        case_id: str, root: Path, runs_dir: Path | None = None, **kwargs: object
+    ) -> RunResult:
+        assert runs_dir is not None
         case = spec.load_case(case_id, root / "validation" / "cases")
         seen.append((case.case_id, root, runs_dir))
         return RunResult(case.case_id, "PASS", runs_dir / case.case_id, ())
@@ -140,7 +148,7 @@ def test_fail_exits_one_and_prints_failures(tmp_path, monkeypatch):
         runner_main.orchestrator,
         "run_case",
         lambda *a, **k: RunResult(
-            "B98", "FAIL", tmp_path / "r", ["owner_read_any_of: x"]
+            "B98", "FAIL", tmp_path / "r", ("owner_read_any_of: x",)
         ),
     )
     err = io.StringIO()
@@ -261,8 +269,9 @@ def test_main_passes_resolved_model_to_single_run_and_prints_selection(
 def test_main_model_flag_requests_an_explicit_model(tmp_path, monkeypatch):
     seen = {}
 
-    def fake_resolve(*, requested=None, probe=None):
+    def fake_resolve(*, requested: str | None = None, probe=None):
         seen["requested"] = requested
+        assert requested is not None
         return _choice(model=requested, reason="explicit")
 
     monkeypatch.setattr(runner_main.model_selection, "resolve_model", fake_resolve)
@@ -335,7 +344,10 @@ def test_main_batch_passes_resolved_model_to_every_case(tmp_path, monkeypatch):
     )
     seen = []
 
-    def fake_run_case(case_id, root, runs_dir=None, **kwargs):
+    def fake_run_case(
+        case_id: str, root: Path, runs_dir: Path | None = None, **kwargs: object
+    ) -> RunResult:
+        assert runs_dir is not None
         seen.append((case_id, kwargs.get("default_model"), kwargs.get("model_reason")))
         return RunResult(case_id, "PASS", runs_dir / case_id, ())
 

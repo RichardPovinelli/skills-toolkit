@@ -2,6 +2,8 @@
 
 import io
 import json
+import urllib.request
+from typing import cast
 
 import pytest
 
@@ -54,7 +56,7 @@ class FakeOpener:
         self.payload = payload
         self.error = error
         self.raw = raw
-        self.request = None
+        self.request: urllib.request.Request | None = None
 
     def open(self, request, timeout=None):
         self.request = request
@@ -72,9 +74,12 @@ class FakeOpener:
 def test_probe_local_models_returns_ids_from_models_endpoint():
     opener = FakeOpener({"data": [{"id": "qwen3.8-27b-q6"}, {"id": "other"}]})
 
-    models = model_selection.probe_local_models(opener=opener)
+    models = model_selection.probe_local_models(
+        opener=cast(urllib.request.OpenerDirector, opener)
+    )
 
     assert models == ("qwen3.8-27b-q6", "other")
+    assert opener.request is not None
     assert opener.request.full_url == "http://host.docker.internal:1235/v1/models"
     assert opener.timeout == 1.5
 
@@ -89,7 +94,12 @@ def test_probe_local_models_returns_ids_from_models_endpoint():
     ],
 )
 def test_probe_local_models_returns_none_for_unusable_responses(opener):
-    assert model_selection.probe_local_models(opener=opener) is None
+    assert (
+        model_selection.probe_local_models(
+            opener=cast(urllib.request.OpenerDirector, opener)
+        )
+        is None
+    )
 
 
 def test_resolve_model_uses_the_default_probe(monkeypatch):
