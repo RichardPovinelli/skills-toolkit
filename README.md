@@ -109,9 +109,10 @@ and the reason are printed and recorded in `report.json` and `metadata.json`.
 Each run's `metadata.json` also records the collection's git revision and the
 `skillkit` version that produced the evidence.
 
-Case authoring and the runner environment are documented in
-[`docs/case-authoring.md`](docs/case-authoring.md) and
-[`docs/runner-environments.md`](docs/runner-environments.md).
+Case authoring, the runner environment, and grading practice are documented in
+[`docs/case-authoring.md`](docs/case-authoring.md),
+[`docs/runner-environments.md`](docs/runner-environments.md), and
+[`docs/grading-sessions.md`](docs/grading-sessions.md).
 
 ## Development
 

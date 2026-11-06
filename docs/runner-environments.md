@@ -1,6 +1,6 @@
 # Runner Environments
 
-For evaluation operation and evidence review, see the [eval developer manual](README.md). Case TOML fields and authoring guidance are in [Case authoring and spec format](case-authoring.md).
+For evaluation operation and evidence review, see the [eval developer manual](README.md). Case TOML fields and authoring guidance are in [Case authoring and spec format](case-authoring.md). How to spend a grading pass without re-reading the corpus every turn is in [Grading sessions](grading-sessions.md).
 
 ## Stored State
 
