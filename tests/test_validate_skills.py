@@ -4,7 +4,6 @@ import json
 from pathlib import Path
 
 import pytest
-
 from skillkit import validate
 
 
@@ -65,7 +64,9 @@ def test_accepts_quoted_and_folded_descriptions(workspace: _Workspace, descripti
     assert metadata["description"] == "Explain this: with details"
 
 
-def test_rejects_missing_reference_and_accepts_resolved_reference(workspace: _Workspace) -> None:
+def test_rejects_missing_reference_and_accepts_resolved_reference(
+    workspace: _Workspace,
+) -> None:
     workspace.write_skill(
         "name: example\ndescription: Review an example",
         "# Example\n\n## Scope and routing\n\nText\n\n[Details](references/details.md)\n\n## Output contract\n\nReport.\n",
@@ -90,9 +91,7 @@ def test_rejects_missing_reference_and_accepts_resolved_reference(workspace: _Wo
         ("# Example\n\n## Purpose\n\nText\n", "exactly one '## Scope and routing'"),
     ],
 )
-def test_skill_requires_exactly_one_scope_and_routing_heading(
-    workspace: _Workspace, body: str, expected: str
-) -> None:
+def test_skill_requires_exactly_one_scope_and_routing_heading(workspace: _Workspace, body: str, expected: str) -> None:
     workspace.write_skill("name: example\ndescription: Review an example", body)
     errors, _ = validate.validate_skill(workspace.skill)
     assert any(expected in error for error in errors)
@@ -105,9 +104,7 @@ def test_skill_requires_exactly_one_scope_and_routing_heading(
         "# Example\n\n## Scope and routing\n\nText\n\n## Output contract\n\nOne\n\n## Output contract\n\nTwo\n",
     ],
 )
-def test_skill_requires_exactly_one_output_contract_heading(
-    workspace: _Workspace, body: str
-) -> None:
+def test_skill_requires_exactly_one_output_contract_heading(workspace: _Workspace, body: str) -> None:
     workspace.write_skill("name: example\ndescription: Review an example", body)
     errors, _ = validate.validate_skill(workspace.skill)
     assert any("exactly one '## Output contract'" in error for error in errors)
@@ -152,7 +149,9 @@ def test_matrix_rejects_malformed_owner_and_companion_columns(workspace: _Worksp
     assert errors, "Malformed routing rows must be rejected"
 
 
-def test_matrix_accepts_well_formed_owner_and_companion_columns(workspace: _Workspace) -> None:
+def test_matrix_accepts_well_formed_owner_and_companion_columns(
+    workspace: _Workspace,
+) -> None:
     matrix = workspace.root / "matrix.md"
     matrix.write_text(
         "| Representative prompt | Primary owner | Conditional companions or handoff | Authorization boundary |\n"
@@ -214,7 +213,10 @@ def test_manifest_metadata_must_agree(workspace: _Workspace) -> None:
         "author": {"name": "Example"},
         "license": "MIT",
     }
-    manifest_paths = [workspace.root / ".github/plugin/plugin.json", workspace.root / ".claude-plugin/plugin.json"]
+    manifest_paths = [
+        workspace.root / ".github/plugin/plugin.json",
+        workspace.root / ".claude-plugin/plugin.json",
+    ]
     for path in manifest_paths:
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(json.dumps(metadata))
@@ -238,9 +240,7 @@ def test_manifest_metadata_must_agree(workspace: _Workspace) -> None:
     manifest_paths[1].write_text(json.dumps(metadata))
     marketplace["plugins"][0]["description"] = "Stale description"
     marketplace_path.write_text(json.dumps(marketplace))
-    assert any(
-        "description" in error for error in validate.validate_manifests(workspace.root)
-    )
+    assert any("description" in error for error in validate.validate_manifests(workspace.root))
     marketplace["plugins"][0]["description"] = metadata["description"]
     marketplace["plugins"][0]["license"] = "Apache-2.0"
     marketplace_path.write_text(json.dumps(marketplace))
@@ -365,7 +365,9 @@ def test_readme_rejects_mismatched_skill_count(workspace: _Workspace) -> None:
     assert any("documented skill count 3 differs from 2" in error for error in errors)
 
 
-def test_remote_documentation_is_not_treated_as_a_local_file(workspace: _Workspace) -> None:
+def test_remote_documentation_is_not_treated_as_a_local_file(
+    workspace: _Workspace,
+) -> None:
     workspace.write_skill(
         "name: example\ndescription: Review an example",
         "# Example\n\n## Scope and routing\n\nText\n\n[Documentation](https://example.org/guide.md)\n\n## Output contract\n\nReport.\n",
@@ -383,7 +385,9 @@ def test_fragment_does_not_hide_a_missing_reference(workspace: _Workspace) -> No
     assert any("broken Markdown link" in error for error in errors)
 
 
-def test_copilot_instructions_requires_all_discovered_skills(workspace: _Workspace) -> None:
+def test_copilot_instructions_requires_all_discovered_skills(
+    workspace: _Workspace,
+) -> None:
     instructions = workspace.root / ".github" / "copilot-instructions.md"
     instructions.parent.mkdir(parents=True)
     instructions.write_text(
@@ -392,33 +396,18 @@ def test_copilot_instructions_requires_all_discovered_skills(workspace: _Workspa
         "## Workflow\n"
         "- **Example** → load `example`\n"
     )
-    errors = validate.validate_copilot_instructions(
-        frozenset({"example", "second"}), workspace.root
-    )
+    errors = validate.validate_copilot_instructions(frozenset({"example", "second"}), workspace.root)
     assert any("does not reference skill 'second'" in error for error in errors)
-    instructions.write_text(
-        "## Workflow\n"
-        "- **Example** → load `example`\n"
-        "- **Second** → load `second`\n"
-    )
-    assert (
-        validate.validate_copilot_instructions(
-            frozenset({"example", "second"}), workspace.root
-        )
-        == []
-    )
+    instructions.write_text("## Workflow\n- **Example** → load `example`\n- **Second** → load `second`\n")
+    assert validate.validate_copilot_instructions(frozenset({"example", "second"}), workspace.root) == []
 
 
 def test_policy_can_relax_collection_specific_rules(workspace: _Workspace) -> None:
-    workspace.write_skill(
-        "name: example\ndescription: Review an example", "# Example\n\nText\n"
-    )
+    workspace.write_skill("name: example\ndescription: Review an example", "# Example\n\nText\n")
     strict_errors, _ = validate.validate_skill(workspace.skill)
     assert strict_errors, "the default policy requires the routing headings"
 
-    relaxed = validate.ValidationPolicy(
-        required_headings=(), rejected_headings=(), policy_checks=()
-    )
+    relaxed = validate.ValidationPolicy(required_headings=(), rejected_headings=(), policy_checks=())
     errors, warnings = validate.validate_skill(workspace.skill, policy=relaxed)
 
     assert errors == []
@@ -428,10 +417,7 @@ def test_policy_can_relax_collection_specific_rules(workspace: _Workspace) -> No
 def test_policy_file_overrides_the_builtin_defaults(tmp_path: Path) -> None:
     config = tmp_path / "validate.toml"
     config.write_text(
-        'max_skill_lines = 10\n'
-        "required_headings = []\n"
-        'matrix = ""\n'
-        "manifests = []\n",
+        'max_skill_lines = 10\nrequired_headings = []\nmatrix = ""\nmanifests = []\n',
         encoding="utf-8",
     )
 

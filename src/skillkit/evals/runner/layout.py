@@ -43,7 +43,7 @@ class CollectionLayout:
         rubric_path: Path | None = None,
         runs_dir: Path | None = None,
         reports_dir: Path | None = None,
-    ) -> "CollectionLayout":
+    ) -> CollectionLayout:
         """Resolve a collection layout from the collection root."""
         root = Path(root)
         resolved_data_root = Path(data_root or root / DATA_DIRNAME)

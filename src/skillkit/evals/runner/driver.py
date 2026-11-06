@@ -9,9 +9,9 @@ the whole tree, not just the leader.
 import os
 import signal
 import subprocess
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Callable
 
 
 @dataclass(frozen=True)

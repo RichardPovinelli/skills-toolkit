@@ -149,9 +149,7 @@ def _duration(run_dir: Path) -> float | None:
     return float(value) if isinstance(value, (int, float)) else None
 
 
-def write_aggregate(
-    batch_dir: Path, entries: list[BatchEntry], *, started_central: str
-) -> tuple[Path, Path]:
+def write_aggregate(batch_dir: Path, entries: list[BatchEntry], *, started_central: str) -> tuple[Path, Path]:
     """Write aggregate ``report.json`` + ``report.md`` into ``batch_dir``."""
     batch_dir = Path(batch_dir)
     batch_dir.mkdir(parents=True, exist_ok=True)
@@ -193,9 +191,7 @@ def write_aggregate(
         notes = "; ".join(part for part in (*e.failures, e.note) if part)
         duration = f"{e.duration_s:.1f}" if e.duration_s is not None else "-"
         run_dir = str(e.run_dir) if e.run_dir else "-"
-        lines.append(
-            f"| {e.case_id} | {e.outcome} | {duration} | {run_dir} | {notes or '-'} |"
-        )
+        lines.append(f"| {e.case_id} | {e.outcome} | {duration} | {run_dir} | {notes or '-'} |")
     md_path = batch_dir / "report.md"
     md_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
     return json_path, md_path

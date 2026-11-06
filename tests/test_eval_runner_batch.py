@@ -8,7 +8,6 @@ from pathlib import Path
 from zoneinfo import ZoneInfo
 
 import pytest
-
 from skillkit.evals.runner import __main__ as runner_main
 from skillkit.evals.runner import batch, spec
 from skillkit.evals.runner.orchestrator import RunResult
@@ -122,9 +121,7 @@ def make_entries():
 def test_write_aggregate_json_and_markdown(tmp_path):
     entries = make_entries()
 
-    json_path, md_path = batch.write_aggregate(
-        tmp_path, entries, started_central="2026-10-11T09:00:00-05:00"
-    )
+    json_path, md_path = batch.write_aggregate(tmp_path, entries, started_central="2026-10-11T09:00:00-05:00")
 
     data = json.loads(json_path.read_text(encoding="utf-8"))
     assert data["started_central"] == "2026-10-11T09:00:00-05:00"
@@ -162,18 +159,14 @@ def test_run_batch_skips_completed_unless_forced(tmp_path):
         executed.append(case_id)
         return RunResult(case_id, "PASS", tmp_path / "runs" / f"R-{case_id}", ())
 
-    entries = batch.run_batch(
-        ["B02", "B05"], tmp_path, tmp_path / "runs", run_one=run_one
-    )
+    entries = batch.run_batch(["B02", "B05"], tmp_path, tmp_path / "runs", run_one=run_one)
 
     assert executed == ["B05"]
     assert entries[0].outcome == "SKIP"
     assert entries[0].note == "earlier run: PASS"
     assert entries[1].outcome == "PASS"
 
-    forced = batch.run_batch(
-        ["B02", "B05"], tmp_path, tmp_path / "runs", force=True, run_one=run_one
-    )
+    forced = batch.run_batch(["B02", "B05"], tmp_path, tmp_path / "runs", force=True, run_one=run_one)
     assert executed == ["B05", "B02", "B05"]
     assert all(e.outcome == "PASS" for e in forced)
 
@@ -185,9 +178,7 @@ def test_run_batch_records_errors_without_aborting(tmp_path):
         B06=RunResult("B06", "PASS", Path("/r/R3"), ()),
     )
 
-    entries = batch.run_batch(
-        ["B02", "B05", "B06"], tmp_path, tmp_path / "runs", run_one=run_one
-    )
+    entries = batch.run_batch(["B02", "B05", "B06"], tmp_path, tmp_path / "runs", run_one=run_one)
 
     assert [e.outcome for e in entries] == ["ERROR", "FAIL", "PASS"]
     assert "bad toml" in entries[0].failures[0]
@@ -211,9 +202,7 @@ def test_run_batch_writes_no_batch_dir_internals_on_error_cases(tmp_path):
 def write_case_toml(root: Path, case_id: str) -> None:
     cases = root / "validation" / "cases"
     cases.mkdir(parents=True, exist_ok=True)
-    (cases / f"{case_id}.toml").write_text(
-        f'id = "{case_id}"\nprompt = "p"\n', encoding="utf-8"
-    )
+    (cases / f"{case_id}.toml").write_text(f'id = "{case_id}"\nprompt = "p"\n', encoding="utf-8")
 
 
 def test_cli_all_expands_case_dir_and_writes_aggregate(tmp_path, monkeypatch):
@@ -222,13 +211,9 @@ def test_cli_all_expands_case_dir_and_writes_aggregate(tmp_path, monkeypatch):
     monkeypatch.setattr(
         runner_main.orchestrator,
         "run_case",
-        lambda cid, root, runs_dir=None, **kwargs: RunResult(
-            cid, "PASS", (tmp_path / "runs" / f"R-{cid}"), ()
-        ),
+        lambda cid, root, runs_dir=None, **kwargs: RunResult(cid, "PASS", (tmp_path / "runs" / f"R-{cid}"), ()),
     )
-    monkeypatch.setattr(
-        runner_main.batch, "central_iso", lambda: "2026-10-11T09:00:00-05:00"
-    )
+    monkeypatch.setattr(runner_main.batch, "central_iso", lambda: "2026-10-11T09:00:00-05:00")
     monkeypatch.setattr(
         runner_main.batch,
         "central_stamp",
@@ -258,9 +243,7 @@ def test_cli_single_id_has_no_batch_dir(tmp_path, monkeypatch):
     monkeypatch.setattr(
         runner_main.orchestrator,
         "run_case",
-        lambda cid, root, runs_dir=None, **kwargs: RunResult(
-            cid, "PASS", tmp_path / "r", ()
-        ),
+        lambda cid, root, runs_dir=None, **kwargs: RunResult(cid, "PASS", tmp_path / "r", ()),
     )
     out = io.StringIO()
     with redirect_stdout(out):
@@ -289,8 +272,6 @@ def test_cli_multi_id_batch_force_flag_plumbed(tmp_path, monkeypatch):
 
     err2 = io.StringIO()
     with redirect_stderr(err2):
-        code = runner_main.main(
-            ["B02", "--runs-dir", str(tmp_path / "runs")], repo_root=tmp_path
-        )
+        code = runner_main.main(["B02", "--runs-dir", str(tmp_path / "runs")], repo_root=tmp_path)
     # Single-id mode keeps always-run semantics even when completed.
     assert code == 1

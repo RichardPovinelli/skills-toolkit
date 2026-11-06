@@ -160,7 +160,7 @@ def run_case(
                 break
             user_text = pending.pop(0)
             turn_no += 1
-    except Exception as err:
+    except Exception as err:  # noqa: BLE001 -- persist evidence for any run failure before re-raising
         crash = err
     finally:
         facts, diff = _collect_evidence(paths, pre_snapshot)

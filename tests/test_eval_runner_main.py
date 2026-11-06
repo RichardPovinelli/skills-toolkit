@@ -5,7 +5,6 @@ from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
 
 import pytest
-
 from skillkit.evals.runner import __main__ as runner_main
 from skillkit.evals.runner import spec, workspace
 from skillkit.evals.runner.model_selection import ModelChoice
@@ -21,9 +20,7 @@ def test_single_case_defaults_collection_to_working_directory(tmp_path, monkeypa
     monkeypatch.chdir(tmp_path)
     seen = {}
 
-    def fake_run_case(
-        case_id: str, root: Path, runs_dir: Path | None = None, **kwargs: object
-    ) -> RunResult:
+    def fake_run_case(case_id: str, root: Path, runs_dir: Path | None = None, **kwargs: object) -> RunResult:
         assert runs_dir is not None
         case = spec.load_case(case_id, root / "validation" / "cases")
         seen["root"] = root
@@ -46,9 +43,7 @@ def test_collection_flag_selects_another_checkout(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     seen = {}
 
-    def fake_run_case(
-        case_id: str, root: Path, runs_dir: Path | None = None, **kwargs: object
-    ) -> RunResult:
+    def fake_run_case(case_id: str, root: Path, runs_dir: Path | None = None, **kwargs: object) -> RunResult:
         assert runs_dir is not None
         seen["root"] = root
         seen["runs_dir"] = runs_dir
@@ -57,10 +52,7 @@ def test_collection_flag_selects_another_checkout(tmp_path, monkeypatch):
     monkeypatch.setattr(runner_main.orchestrator, "run_case", fake_run_case)
     monkeypatch.setattr(runner_main.review, "generate", lambda **kwargs: "")
 
-    assert (
-        runner_main.main(["B05", "--collection", str(collection), "--skip-review"])
-        == 0
-    )
+    assert runner_main.main(["B05", "--collection", str(collection), "--skip-review"]) == 0
     assert seen["root"] == collection
     assert seen["runs_dir"] == collection / "validation-runs"
     assert not (tmp_path / "validation-runs").exists()
@@ -70,9 +62,7 @@ def test_list_prints_case_ids_without_probing_the_model(tmp_path, monkeypatch):
     cases_dir = tmp_path / "validation" / "cases"
     cases_dir.mkdir(parents=True)
     for case_id in ("B05", "B02"):
-        (cases_dir / f"{case_id}.toml").write_text(
-            f'id = "{case_id}"\nprompt = "test"\n'
-        )
+        (cases_dir / f"{case_id}.toml").write_text(f'id = "{case_id}"\nprompt = "test"\n')
 
     def forbidden_resolve(**kwargs):
         raise AssertionError("--list must not resolve or probe a model")
@@ -95,22 +85,16 @@ def test_list_reports_an_empty_collection(tmp_path):
 
 
 @pytest.mark.parametrize("launch_dir", [".", "validation", "validation/cases"])
-def test_all_discovers_cases_independent_of_launch_directory(
-    tmp_path, monkeypatch, launch_dir
-):
+def test_all_discovers_cases_independent_of_launch_directory(tmp_path, monkeypatch, launch_dir):
     cases_dir = tmp_path / "validation" / "cases"
     cases_dir.mkdir(parents=True)
     for case_id in ("B05", "B02"):
-        (cases_dir / f"{case_id}.toml").write_text(
-            f'id = "{case_id}"\nprompt = "test"\n'
-        )
+        (cases_dir / f"{case_id}.toml").write_text(f'id = "{case_id}"\nprompt = "test"\n')
     monkeypatch.chdir(tmp_path / launch_dir)
     monkeypatch.setenv("PWD", str(tmp_path))
     seen = []
 
-    def fake_run_case(
-        case_id: str, root: Path, runs_dir: Path | None = None, **kwargs: object
-    ) -> RunResult:
+    def fake_run_case(case_id: str, root: Path, runs_dir: Path | None = None, **kwargs: object) -> RunResult:
         assert runs_dir is not None
         case = spec.load_case(case_id, root / "validation" / "cases")
         seen.append((case.case_id, root, runs_dir))
@@ -120,9 +104,7 @@ def test_all_discovers_cases_independent_of_launch_directory(
     monkeypatch.setattr(runner_main.review, "generate", lambda **kwargs: "")
 
     assert runner_main.main(["--all", "--collection", str(tmp_path)]) == 0
-    assert seen == [
-        (case_id, tmp_path, tmp_path / "validation-runs") for case_id in ("B02", "B05")
-    ]
+    assert seen == [(case_id, tmp_path, tmp_path / "validation-runs") for case_id in ("B02", "B05")]
     assert len(list((tmp_path / "validation-runs").glob("*-batch/report.json"))) == 1
     assert (tmp_path / "reports").is_dir()
 
@@ -147,9 +129,7 @@ def test_fail_exits_one_and_prints_failures(tmp_path, monkeypatch):
     monkeypatch.setattr(
         runner_main.orchestrator,
         "run_case",
-        lambda *a, **k: RunResult(
-            "B98", "FAIL", tmp_path / "r", ("owner_read_any_of: x",)
-        ),
+        lambda *a, **k: RunResult("B98", "FAIL", tmp_path / "r", ("owner_read_any_of: x",)),
     )
     err = io.StringIO()
     with redirect_stderr(err):
@@ -158,9 +138,7 @@ def test_fail_exits_one_and_prints_failures(tmp_path, monkeypatch):
     assert "owner_read_any_of" in err.getvalue()
 
 
-def test_single_runs_use_validation_runs_and_unique_timestamped_briefs(
-    tmp_path, monkeypatch
-):
+def test_single_runs_use_validation_runs_and_unique_timestamped_briefs(tmp_path, monkeypatch):
     seen = {}
 
     def central_stamp(offset_seconds=0):
@@ -210,21 +188,15 @@ def test_guard_error_exits_two(tmp_path, monkeypatch):
 
 
 @pytest.mark.parametrize("case_ids", [["B05"], ["B02", "B05"], ["--all"]])
-def test_skip_review_returns_result_without_starting_review(
-    tmp_path, monkeypatch, case_ids
-):
+def test_skip_review_returns_result_without_starting_review(tmp_path, monkeypatch, case_ids):
     cases_dir = tmp_path / "validation" / "cases"
     cases_dir.mkdir(parents=True)
     for case_id in ("B02", "B05"):
-        (cases_dir / f"{case_id}.toml").write_text(
-            f'id = "{case_id}"\nprompt = "test"\n'
-        )
+        (cases_dir / f"{case_id}.toml").write_text(f'id = "{case_id}"\nprompt = "test"\n')
     monkeypatch.setattr(
         runner_main.orchestrator,
         "run_case",
-        lambda cid, root, runs_dir=None, **kwargs: RunResult(
-            cid, "PASS", runs_dir / cid, ()
-        ),
+        lambda cid, root, runs_dir=None, **kwargs: RunResult(cid, "PASS", runs_dir / cid, ()),
     )
 
     def forbidden_review(**kwargs):
@@ -243,12 +215,8 @@ def _choice(model="opencode/deepseek-v4.1-flash-free", reason="local-unreachable
     )
 
 
-def test_main_passes_resolved_model_to_single_run_and_prints_selection(
-    tmp_path, monkeypatch
-):
-    monkeypatch.setattr(
-        runner_main.model_selection, "resolve_model", lambda **kwargs: _choice()
-    )
+def test_main_passes_resolved_model_to_single_run_and_prints_selection(tmp_path, monkeypatch):
+    monkeypatch.setattr(runner_main.model_selection, "resolve_model", lambda **kwargs: _choice())
     seen = {}
 
     def fake_run_case(case_id, root, runs_dir=None, **kwargs):
@@ -278,9 +246,7 @@ def test_main_model_flag_requests_an_explicit_model(tmp_path, monkeypatch):
     monkeypatch.setattr(
         runner_main.orchestrator,
         "run_case",
-        lambda cid, root, runs_dir=None, **kwargs: RunResult(
-            cid, "PASS", tmp_path / "runs" / "R1", ()
-        ),
+        lambda cid, root, runs_dir=None, **kwargs: RunResult(cid, "PASS", tmp_path / "runs" / "R1", ()),
     )
 
     assert (
@@ -294,9 +260,7 @@ def test_main_model_flag_requests_an_explicit_model(tmp_path, monkeypatch):
 
 
 def test_main_no_local_fallback_exits_two_before_running(tmp_path, monkeypatch):
-    monkeypatch.setattr(
-        runner_main.model_selection, "resolve_model", lambda **kwargs: _choice()
-    )
+    monkeypatch.setattr(runner_main.model_selection, "resolve_model", lambda **kwargs: _choice())
 
     def forbidden_run(*args, **kwargs):
         raise AssertionError("run_case must not start when local fallback is refused")
@@ -304,18 +268,14 @@ def test_main_no_local_fallback_exits_two_before_running(tmp_path, monkeypatch):
     monkeypatch.setattr(runner_main.orchestrator, "run_case", forbidden_run)
     err = io.StringIO()
     with redirect_stderr(err):
-        code = runner_main.main(
-            ["B98", "--no-local-fallback", "--skip-review"], repo_root=tmp_path
-        )
+        code = runner_main.main(["B98", "--no-local-fallback", "--skip-review"], repo_root=tmp_path)
 
     assert code == 2
     assert "local model" in err.getvalue().lower()
 
 
 def test_main_free_fallback_runs_without_credentials(tmp_path, monkeypatch):
-    monkeypatch.setattr(
-        runner_main.model_selection, "resolve_model", lambda **kwargs: _choice()
-    )
+    monkeypatch.setattr(runner_main.model_selection, "resolve_model", lambda **kwargs: _choice())
     seen = {}
 
     def fake_run_case(case_id, root, runs_dir=None, **kwargs):
@@ -336,17 +296,11 @@ def test_main_batch_passes_resolved_model_to_every_case(tmp_path, monkeypatch):
     cases_dir = tmp_path / "validation" / "cases"
     cases_dir.mkdir(parents=True)
     for case_id in ("B02", "B05"):
-        (cases_dir / f"{case_id}.toml").write_text(
-            f'id = "{case_id}"\nprompt = "test"\n'
-        )
-    monkeypatch.setattr(
-        runner_main.model_selection, "resolve_model", lambda **kwargs: _choice()
-    )
+        (cases_dir / f"{case_id}.toml").write_text(f'id = "{case_id}"\nprompt = "test"\n')
+    monkeypatch.setattr(runner_main.model_selection, "resolve_model", lambda **kwargs: _choice())
     seen = []
 
-    def fake_run_case(
-        case_id: str, root: Path, runs_dir: Path | None = None, **kwargs: object
-    ) -> RunResult:
+    def fake_run_case(case_id: str, root: Path, runs_dir: Path | None = None, **kwargs: object) -> RunResult:
         assert runs_dir is not None
         seen.append((case_id, kwargs.get("default_model"), kwargs.get("model_reason")))
         return RunResult(case_id, "PASS", runs_dir / case_id, ())

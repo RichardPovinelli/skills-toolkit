@@ -33,7 +33,10 @@ def tool_event(tool: str, input_payload: dict) -> str:
     return ev(
         {
             "type": "tool_use",
-            "part": {"tool": tool, "state": {"status": "completed", "input": input_payload}},
+            "part": {
+                "tool": tool,
+                "state": {"status": "completed", "input": input_payload},
+            },
         }
     )
 
@@ -122,7 +125,11 @@ def test_runner_turn_events_become_user_entries() -> None:
         ),
         json.dumps({"type": "runner_turn", "turn": 2, "user": "Approved, continue."}),
         json.dumps(
-            {"sessionID": "ses_x", "type": "text", "part": {"type": "text", "text": "Done."}}
+            {
+                "sessionID": "ses_x",
+                "type": "text",
+                "part": {"type": "text", "text": "Done."},
+            }
         ),
     ]
 
@@ -141,7 +148,11 @@ def test_agent_awaits_user_only_on_trailing_question() -> None:
         [
             json.dumps({"type": "runner_turn", "turn": 1, "user": "go"}),
             json.dumps(
-                {"sessionID": "s", "type": "text", "part": {"type": "text", "text": "Ok to edit?"}}
+                {
+                    "sessionID": "s",
+                    "type": "text",
+                    "part": {"type": "text", "text": "Ok to edit?"},
+                }
             ),
         ]
     )
@@ -151,7 +162,11 @@ def test_agent_awaits_user_only_on_trailing_question() -> None:
         [
             json.dumps({"type": "runner_turn", "turn": 1, "user": "go"}),
             json.dumps(
-                {"sessionID": "s", "type": "text", "part": {"type": "text", "text": "All done."}}
+                {
+                    "sessionID": "s",
+                    "type": "text",
+                    "part": {"type": "text", "text": "All done."},
+                }
             ),
         ]
     )
@@ -164,14 +179,12 @@ def test_agent_awaits_user_only_on_trailing_question() -> None:
                 {
                     "sessionID": "s",
                     "type": "text",
-                    "part": {"type": "text", "text": "Shall I run it?\"\n"},
+                    "part": {"type": "text", "text": 'Shall I run it?"\n'},
                 }
             ),
         ]
     )
     assert transcript.agent_awaits_user(quoted_question) is True
 
-    no_text = transcript.parse_events(
-        [json.dumps({"type": "runner_turn", "turn": 1, "user": "go"})]
-    )
+    no_text = transcript.parse_events([json.dumps({"type": "runner_turn", "turn": 1, "user": "go"})])
     assert transcript.agent_awaits_user(no_text) is False

@@ -2,7 +2,6 @@
 
 from dataclasses import dataclass
 
-
 LOCAL_MODEL = "llama-router/qwen3.8-27b-q6"
 FALLBACK_MODEL = "opencode/deepseek-v4.1-flash-free"
 DEFAULT_MODEL = LOCAL_MODEL

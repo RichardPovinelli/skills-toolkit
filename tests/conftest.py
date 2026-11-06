@@ -1,7 +1,6 @@
 """Shared test fixtures for the eval runner suite."""
 
 import pytest
-
 from skillkit.evals.runner import __main__ as runner_main
 from skillkit.evals.runner.model_selection import ModelChoice
 

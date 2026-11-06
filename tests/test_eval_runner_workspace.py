@@ -4,7 +4,6 @@ from pathlib import Path
 from typing import Any
 
 import pytest
-
 from skillkit.evals.runner import workspace
 from skillkit.evals.runner.types import CaseSpec, Exposure, Fixture, InlineFile
 
@@ -57,9 +56,7 @@ def test_build_run_layout_creates_directories(tmp_path: Path) -> None:
 def test_agent_root_defaults_outside_repo_and_runs(tmp_path: Path) -> None:
     repo = make_repo(tmp_path)
 
-    paths = workspace.build_run_layout(
-        repo, make_case(), repo / "evals" / "runs", RUN_ID
-    )
+    paths = workspace.build_run_layout(repo, make_case(), repo / "evals" / "runs", RUN_ID)
     try:
         assert not paths.workspace_dir.is_relative_to(repo)
         assert not paths.home_dir.is_relative_to(repo)
@@ -91,9 +88,7 @@ def test_build_run_layout_refuses_collision(tmp_path: Path) -> None:
     paths = build(tmp_path)
 
     with pytest.raises(workspace.WorkspaceError, match="exists"):
-        workspace.build_run_layout(
-            paths.repo_root, make_case(), tmp_path / "runs", RUN_ID
-        )
+        workspace.build_run_layout(paths.repo_root, make_case(), tmp_path / "runs", RUN_ID)
 
 
 def test_provision_copies_fixtures_and_links_full_catalog(tmp_path: Path) -> None:
@@ -106,9 +101,7 @@ def test_provision_copies_fixtures_and_links_full_catalog(tmp_path: Path) -> Non
     skills = paths.workspace_dir / ".opencode" / "skills"
     assert (skills / "alpha").is_symlink()
     assert (skills / "beta").is_symlink()
-    assert (skills / "alpha").resolve() == (
-        paths.repo_root / "skills" / "alpha"
-    ).resolve()
+    assert (skills / "alpha").resolve() == (paths.repo_root / "skills" / "alpha").resolve()
 
 
 def test_provision_links_only_named_skills(tmp_path: Path) -> None:
@@ -135,9 +128,7 @@ def test_write_home_config_writes_provider_and_empty_skill_dirs(tmp_path: Path) 
 
     workspace.write_home_config(paths, "llama-router/test-model")
 
-    config_text = (
-        paths.home_dir / ".config" / "opencode" / "opencode.jsonc"
-    ).read_text(encoding="utf-8")
+    config_text = (paths.home_dir / ".config" / "opencode" / "opencode.jsonc").read_text(encoding="utf-8")
     assert "test-model" in config_text
     assert "http://host.docker.internal:1235/v1" in config_text
     for empty in (".config/opencode/skills", ".claude/skills", ".agents/skills"):
@@ -153,9 +144,7 @@ def test_write_home_config_writes_generic_skill_routing_instruction(
 
     workspace.write_home_config(paths, "llama-router/test-model")
 
-    instruction = (paths.home_dir / ".config" / "opencode" / "AGENTS.md").read_text(
-        encoding="utf-8"
-    )
+    instruction = (paths.home_dir / ".config" / "opencode" / "AGENTS.md").read_text(encoding="utf-8")
     assert "Before starting a task" in instruction
     assert "skill tool" in instruction
     assert "primary owner" in instruction
@@ -185,9 +174,7 @@ def test_write_home_config_writes_skill_routing_for_case_opt_in(
 
     workspace.write_home_config(paths, "llama-router/test-model")
 
-    instruction = (paths.home_dir / ".config" / "opencode" / "AGENTS.md").read_text(
-        encoding="utf-8"
-    )
+    instruction = (paths.home_dir / ".config" / "opencode" / "AGENTS.md").read_text(encoding="utf-8")
     assert "Before starting a task" in instruction
 
 
@@ -198,9 +185,7 @@ def test_write_home_config_uses_builtin_opencode_provider_for_free_model(
 
     workspace.write_home_config(paths, "opencode/deepseek-v4.1-flash-free")
 
-    config_text = (
-        paths.home_dir / ".config" / "opencode" / "opencode.jsonc"
-    ).read_text(encoding="utf-8")
+    config_text = (paths.home_dir / ".config" / "opencode" / "opencode.jsonc").read_text(encoding="utf-8")
     assert "host.docker.internal" not in config_text
     assert "apiKey" not in config_text
     assert "opencode-go" not in config_text
@@ -327,9 +312,7 @@ def test_provision_writes_inline_files(tmp_path: Path) -> None:
 
     workspace.provision(paths)
 
-    assert (paths.workspace_dir / "pkg" / "settings.py").read_text(
-        encoding="utf-8"
-    ) == ("MAX_RETRIES = 3\n")
+    assert (paths.workspace_dir / "pkg" / "settings.py").read_text(encoding="utf-8") == ("MAX_RETRIES = 3\n")
     assert (paths.workspace_dir / "empty.txt").read_text(encoding="utf-8") == ""
 
 
@@ -351,9 +334,7 @@ def test_provision_copies_state_tree_into_workspace(tmp_path: Path) -> None:
     paths = build(tmp_path, make_case(state="demo_state"))
     state = state_dir(paths, "demo_state")
     (state / "requirements").mkdir()
-    (state / "requirements" / "spec.md").write_text(
-        "# Approved spec\n", encoding="utf-8"
-    )
+    (state / "requirements" / "spec.md").write_text("# Approved spec\n", encoding="utf-8")
     src = state / "src"
     src.mkdir()
     (src / "app.py").write_text("print('hi')\n", encoding="utf-8")
@@ -363,9 +344,7 @@ def test_provision_copies_state_tree_into_workspace(tmp_path: Path) -> None:
 
     allowed = workspace.provision(paths)
 
-    assert (paths.workspace_dir / "requirements" / "spec.md").read_text(
-        encoding="utf-8"
-    ) == ("# Approved spec\n")
+    assert (paths.workspace_dir / "requirements" / "spec.md").read_text(encoding="utf-8") == ("# Approved spec\n")
     assert (paths.workspace_dir / "src" / "app.py").exists()
     assert not (paths.workspace_dir / "src" / "__pycache__").exists()
     assert "requirements" in allowed and "src" in allowed
@@ -389,9 +368,7 @@ def test_provision_inline_overwrites_state_file(tmp_path: Path) -> None:
 
     workspace.provision(paths)
 
-    assert (paths.workspace_dir / "notes.md").read_text(
-        encoding="utf-8"
-    ) == "case-specific\n"
+    assert (paths.workspace_dir / "notes.md").read_text(encoding="utf-8") == "case-specific\n"
 
 
 def test_provision_copies_skills_subtree_into_workspace(tmp_path: Path) -> None:
@@ -542,9 +519,7 @@ def test_prepare_shim_env_builds_exact_path_and_state(tmp_path: Path) -> None:
 def test_prepare_shim_env_rejects_missing_shim_set(tmp_path: Path) -> None:
     repo = make_repo(tmp_path)
     case = make_case(shims="nope")
-    paths = workspace.build_run_layout(
-        repo, case, tmp_path / "runs", RUN_ID, agent_root=tmp_path / "agent"
-    )
+    paths = workspace.build_run_layout(repo, case, tmp_path / "runs", RUN_ID, agent_root=tmp_path / "agent")
 
     with pytest.raises(workspace.WorkspaceError, match="nope"):
         workspace.prepare_shim_env(paths)

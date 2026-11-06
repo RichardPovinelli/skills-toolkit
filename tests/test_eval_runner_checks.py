@@ -129,7 +129,12 @@ def test_no_forbidden_reads_ignores_run_dir_and_allowed_paths():
 
 
 def test_no_forbidden_reads_flags_paths_escaping_allowed_roots():
-    ctx = make_ctx(paths_touched=["/home/vscode/.claude/skills/alpha/SKILL.md", "/repo/evals/fixtures/pipeline.sh"])
+    ctx = make_ctx(
+        paths_touched=[
+            "/home/vscode/.claude/skills/alpha/SKILL.md",
+            "/repo/evals/fixtures/pipeline.sh",
+        ]
+    )
     assert len(run_check("no_forbidden_reads", ctx)) == 2
 
 
@@ -324,9 +329,7 @@ SCOPE_PARAMS = {
 def test_workspace_scope_accepts_requirements_only_workspace(tmp_path):
     workspace = tmp_path / "ws"
     (workspace / "requirements").mkdir(parents=True)
-    (workspace / "requirements" / "idea.md").write_text(
-        "requirements\n", encoding="utf-8"
-    )
+    (workspace / "requirements" / "idea.md").write_text("requirements\n", encoding="utf-8")
 
     assert run_check("workspace_scope", _scope_ctx(tmp_path), **SCOPE_PARAMS) == []
 
@@ -334,9 +337,7 @@ def test_workspace_scope_accepts_requirements_only_workspace(tmp_path):
 def test_workspace_scope_accepts_single_project_requirements_artifact(tmp_path):
     workspace = tmp_path / "ws"
     (workspace / "projects" / "alpha").mkdir(parents=True)
-    (workspace / "projects" / "alpha" / "requirements.md").write_text(
-        "requirements\n", encoding="utf-8"
-    )
+    (workspace / "projects" / "alpha" / "requirements.md").write_text("requirements\n", encoding="utf-8")
 
     assert run_check("workspace_scope", _scope_ctx(tmp_path), **SCOPE_PARAMS) == []
 
@@ -344,9 +345,7 @@ def test_workspace_scope_accepts_single_project_requirements_artifact(tmp_path):
 def test_workspace_scope_rejects_later_stage_artifacts(tmp_path):
     workspace = tmp_path / "ws"
     (workspace / "requirements").mkdir(parents=True)
-    (workspace / "requirements" / "idea.md").write_text(
-        "requirements\n", encoding="utf-8"
-    )
+    (workspace / "requirements" / "idea.md").write_text("requirements\n", encoding="utf-8")
     (workspace / "plans").mkdir()
     (workspace / "plans" / "increment.md").write_text("plan\n", encoding="utf-8")
     (workspace / "src").mkdir()
@@ -361,42 +360,28 @@ def test_workspace_scope_rejects_later_stage_artifacts(tmp_path):
 def test_workspace_scope_rejects_bare_projects_root(tmp_path):
     workspace = tmp_path / "ws"
     (workspace / "requirements").mkdir(parents=True)
-    (workspace / "requirements" / "idea.md").write_text(
-        "requirements\n", encoding="utf-8"
-    )
+    (workspace / "requirements" / "idea.md").write_text("requirements\n", encoding="utf-8")
     (workspace / "projects").mkdir()
 
     failures = run_check("workspace_scope", _scope_ctx(tmp_path), **SCOPE_PARAMS)
 
-    assert any(
-        "protected top-level" in failure and "projects" in failure
-        for failure in failures
-    )
+    assert any("protected top-level" in failure and "projects" in failure for failure in failures)
 
 
 def test_workspace_scope_rejects_project_root_with_later_stage_tree(tmp_path):
     workspace = tmp_path / "ws"
     (workspace / "projects" / "alpha").mkdir(parents=True)
-    (workspace / "projects" / "alpha" / "requirements.md").write_text(
-        "requirements\n", encoding="utf-8"
-    )
+    (workspace / "projects" / "alpha" / "requirements.md").write_text("requirements\n", encoding="utf-8")
     (workspace / "projects" / "alpha" / "plans").mkdir()
-    (workspace / "projects" / "alpha" / "plans" / "increment.md").write_text(
-        "plan\n", encoding="utf-8"
-    )
+    (workspace / "projects" / "alpha" / "plans" / "increment.md").write_text("plan\n", encoding="utf-8")
 
     failures = run_check("workspace_scope", _scope_ctx(tmp_path), **SCOPE_PARAMS)
 
-    assert any(
-        "protected top-level" in failure or "later-stage" in failure
-        for failure in failures
-    )
+    assert any("protected top-level" in failure or "later-stage" in failure for failure in failures)
 
 
 def test_workspace_scope_requires_its_pattern_list(tmp_path):
-    assert run_check("workspace_scope", _scope_ctx(tmp_path)) == [
-        "check is missing its 'require_any' list"
-    ]
+    assert run_check("workspace_scope", _scope_ctx(tmp_path)) == ["check is missing its 'require_any' list"]
 
 
 def test_lives_outside_workspace_paths_are_still_flagged():

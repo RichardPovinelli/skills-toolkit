@@ -273,15 +273,15 @@ def _model_analysis_text(case_id: str, case, done, report: dict) -> str:
     if not shutil.which("opencode"):
         raise RuntimeError("opencode CLI is not available")
     if not isinstance(report, dict):
-        raise RuntimeError("evidence unavailable: report.json")
+        raise RuntimeError("evidence unavailable: report.json")  # noqa: TRY004 -- malformed evidence uses the unavailable-analysis fallback
 
     run_dir = Path(done.run)
     prechecks = _read_json(run_dir / "prechecks.json", sentinel=_MISSING)
     turns = _read_json(run_dir / "turns.json", sentinel=_MISSING)
     if not isinstance(prechecks, dict):
-        raise RuntimeError("evidence unavailable: prechecks.json")
+        raise RuntimeError("evidence unavailable: prechecks.json")  # noqa: TRY004 -- malformed evidence uses the unavailable-analysis fallback
     if not isinstance(turns, list):
-        raise RuntimeError("evidence unavailable: turns.json")
+        raise RuntimeError("evidence unavailable: turns.json")  # noqa: TRY004 -- malformed evidence uses the unavailable-analysis fallback
     try:
         events = (run_dir / "events.jsonl").read_text(encoding="utf-8", errors="replace")
         conversation = (run_dir / "conversation.log").read_text(encoding="utf-8", errors="replace")

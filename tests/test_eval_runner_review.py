@@ -6,7 +6,6 @@ from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
 
 import pytest
-
 from skillkit.evals.runner import __main__ as runner_main
 from skillkit.evals.runner import review
 from skillkit.evals.runner.orchestrator import RunResult
@@ -94,22 +93,16 @@ TURNS = [
 
 def make_case(runs_dir: Path, cases_dir: Path, case_id: str = "B98") -> None:
     cases_dir.mkdir(parents=True, exist_ok=True)
-    (cases_dir / f"{case_id}.toml").write_text(
-        CASE_TOML.replace("B98", case_id), encoding="utf-8"
-    )
+    (cases_dir / f"{case_id}.toml").write_text(CASE_TOML.replace("B98", case_id), encoding="utf-8")
 
 
 def set_case_model(cases_dir: Path, model: str) -> None:
     case_path = cases_dir / "B98.toml"
-    content = case_path.read_text(encoding="utf-8").replace(
-        'model = "test/model"', f'model = "{model}"'
-    )
+    content = case_path.read_text(encoding="utf-8").replace('model = "test/model"', f'model = "{model}"')
     case_path.write_text(content, encoding="utf-8")
 
 
-def make_completed_run(
-    runs_dir: Path, name: str, outcome: str = "PASS", **report
-) -> Path:
+def make_completed_run(runs_dir: Path, name: str, outcome: str = "PASS", **report) -> Path:
     run = runs_dir / name
     run.mkdir(parents=True, exist_ok=True)
     payload = {
@@ -128,9 +121,7 @@ def make_completed_run(
         json.dumps({"ok": True, "checks": [{"name": "catalog_isolated", "ok": True}]}),
         encoding="utf-8",
     )
-    (run / "conversation.log").write_text(
-        "user:diagnose this failure\n", encoding="utf-8"
-    )
+    (run / "conversation.log").write_text("user:diagnose this failure\n", encoding="utf-8")
     return run
 
 
@@ -206,9 +197,7 @@ def test_newest_completed_run_wins_and_batch_dirs_ignored(tmp_path):
         failures=["owner_read_any_of: no owner skill read"],
     )
     newest = make_completed_run(runs_dir, "20261011T020000Z-B98", "PASS")
-    make_completed_run(
-        runs_dir, "20261011T023000Z-B98-crashed-x", "PASS"
-    )  # foreign dir
+    make_completed_run(runs_dir, "20261011T023000Z-B98-crashed-x", "PASS")  # foreign dir
     (runs_dir / "20261011T030000Z-batch").mkdir()  # batch dir, not a case run
 
     md = generate(root, runs_dir, cases_dir, out_path, scores_path)
@@ -216,9 +205,7 @@ def test_newest_completed_run_wins_and_batch_dirs_ignored(tmp_path):
     assert newest.name in md
     assert "20261011T010000Z-B98" not in md
     assert "PASS" in md
-    assert (
-        "../../validation-runs/" in md
-    )  # links are relative to the brief, not absolute
+    assert "../../validation-runs/" in md  # links are relative to the brief, not absolute
 
 
 def test_verdict_failures_and_prechecks_passthrough(tmp_path):
@@ -242,9 +229,7 @@ def test_non_dict_report_degrades_verdict_section(tmp_path, monkeypatch):
     run = make_completed_run(runs_dir, "20261011T020000Z-B98", "PASS")
     (run / "report.json").write_text("null", encoding="utf-8")
     done = review.batch.CompletedRun(run=run, outcome="PASS")
-    monkeypatch.setattr(
-        review.batch, "discover_completed", lambda runs_dir, case_ids: {"B98": done}
-    )
+    monkeypatch.setattr(review.batch, "discover_completed", lambda runs_dir, case_ids: {"B98": done})
 
     md = generate(root, runs_dir, cases_dir, out_path, scores_path)
 
@@ -291,26 +276,20 @@ def test_empty_change_list_renders_no_changes(tmp_path):
 def test_turn_without_diff_after_renders_no_changes(tmp_path):
     root, runs_dir, cases_dir, out_path, scores_path = make_repo(tmp_path)
     run = make_completed_run(runs_dir, "20261011T020000Z-B98", "PASS")
-    (run / "turns.json").write_text(
-        json.dumps([{"turn": 1, "exit_code": 0, "timed_out": False}]), encoding="utf-8"
-    )
+    (run / "turns.json").write_text(json.dumps([{"turn": 1, "exit_code": 0, "timed_out": False}]), encoding="utf-8")
 
     md = generate(root, runs_dir, cases_dir, out_path, scores_path)
 
     assert "no workspace changes" in md.split("Workspace changes")[1]
 
 
-def test_llm_analysis_section_renders_model_summary_when_available(
-    tmp_path, monkeypatch
-):
+def test_llm_analysis_section_renders_model_summary_when_available(tmp_path, monkeypatch):
     root, runs_dir, cases_dir, out_path, scores_path = make_repo(tmp_path)
     make_completed_run(runs_dir, "20261011T020000Z-B98", "PASS")
     monkeypatch.setattr(
         review,
         "_model_analysis_text",
-        lambda case_id, case, done, report: (
-            "Routing is coherent and the run stayed within the exposed skill set."
-        ),
+        lambda case_id, case, done, report: "Routing is coherent and the run stayed within the exposed skill set.",
     )
 
     md = generate(root, runs_dir, cases_dir, out_path, scores_path)
@@ -341,14 +320,10 @@ def test_llm_analysis_placeholder_when_model_unavailable(tmp_path, monkeypatch):
     assert "model unavailable" in md.lower()
 
 
-def test_model_analysis_parses_opencode_jsonl_and_includes_events(
-    tmp_path, monkeypatch
-):
+def test_model_analysis_parses_opencode_jsonl_and_includes_events(tmp_path, monkeypatch):
     _, runs_dir, cases_dir, _, _ = make_repo(tmp_path)
     set_case_model(cases_dir, "llama-router/test-model")
-    make_completed_run(
-        runs_dir, "20261011T020000Z-B98", "PASS", model="llama-router/test-model"
-    )
+    make_completed_run(runs_dir, "20261011T020000Z-B98", "PASS", model="llama-router/test-model")
     completed = review.batch.discover_completed(runs_dir, ["B98"])["B98"]
     captured = {}
 
@@ -367,9 +342,7 @@ def test_model_analysis_parses_opencode_jsonl_and_includes_events(
     monkeypatch.setattr(review.shutil, "which", lambda executable: "/usr/bin/opencode")
     monkeypatch.setattr(review.subprocess, "run", fake_run)
 
-    text = review._model_analysis_text(
-        "B98", review.spec.load_case("B98", cases_dir), completed, {}
-    )
+    text = review._model_analysis_text("B98", review.spec.load_case("B98", cases_dir), completed, {})
 
     assert text == "Evidence supports the outcome."
     assert "--standalone" in captured["argv"]
@@ -377,9 +350,7 @@ def test_model_analysis_parses_opencode_jsonl_and_includes_events(
     assert "--auto" not in captured["argv"]
     assert Path(captured["cwd"]) != runs_dir
     assert captured["env"]["PWD"] == captured["cwd"]
-    assert json.loads(captured["env"]["OPENCODE_CONFIG_CONTENT"])["tools"] == {
-        "*": False
-    }
+    assert json.loads(captured["env"]["OPENCODE_CONFIG_CONTENT"])["tools"] == {"*": False}
     assert "debugging-failure-triage" in captured["prompt"]
     assert "3 brief bullet points and 80 words total" in captured["prompt"]
     assert '"events":' in captured["prompt"]
@@ -389,14 +360,10 @@ def test_model_analysis_parses_opencode_jsonl_and_includes_events(
 def test_failed_opencode_process_renders_unavailable_analysis(tmp_path, monkeypatch):
     root, runs_dir, cases_dir, out_path, scores_path = make_repo(tmp_path)
     set_case_model(cases_dir, "llama-router/test-model")
-    make_completed_run(
-        runs_dir, "20261011T020000Z-B98", "PASS", model="llama-router/test-model"
-    )
+    make_completed_run(runs_dir, "20261011T020000Z-B98", "PASS", model="llama-router/test-model")
 
     def failed_run(argv, **kwargs):
-        return review.subprocess.CompletedProcess(
-            argv, 1, stdout="", stderr="connection refused"
-        )
+        return review.subprocess.CompletedProcess(argv, 1, stdout="", stderr="connection refused")
 
     monkeypatch.setattr(review.shutil, "which", lambda executable: "/usr/bin/opencode")
     monkeypatch.setattr(review.subprocess, "run", failed_run)
@@ -411,9 +378,7 @@ def test_failed_opencode_process_renders_unavailable_analysis(tmp_path, monkeypa
 def test_non_local_model_is_not_used_for_review_analysis(tmp_path, monkeypatch):
     root, runs_dir, cases_dir, out_path, scores_path = make_repo(tmp_path)
     set_case_model(cases_dir, "openai/review-model")
-    make_completed_run(
-        runs_dir, "20261011T020000Z-B98", "PASS", model="openai/review-model"
-    )
+    make_completed_run(runs_dir, "20261011T020000Z-B98", "PASS", model="openai/review-model")
     called = False
 
     def forbidden_run(argv, **kwargs):
@@ -459,9 +424,7 @@ def test_review_analysis_uses_report_model_and_skips_hosted_runs(tmp_path, monke
 def test_unreadable_required_analysis_evidence_is_not_summarized(tmp_path, monkeypatch):
     root, runs_dir, cases_dir, out_path, scores_path = make_repo(tmp_path)
     set_case_model(cases_dir, "llama-router/test-model")
-    run = make_completed_run(
-        runs_dir, "20261011T020000Z-B98", "PASS", model="llama-router/test-model"
-    )
+    run = make_completed_run(runs_dir, "20261011T020000Z-B98", "PASS", model="llama-router/test-model")
     (run / "prechecks.json").write_text("{oops", encoding="utf-8")
     called = False
 
@@ -563,9 +526,7 @@ def test_repeated_generation_recomputes_scores_without_overlay_state(tmp_path):
 # --- CLI ---------------------------------------------------------------------
 
 
-def test_batch_with_case_errors_keeps_completed_evidence_and_rubric_data(
-    tmp_path, monkeypatch
-):
+def test_batch_with_case_errors_keeps_completed_evidence_and_rubric_data(tmp_path, monkeypatch):
     root, runs_dir, cases_dir, out_path, scores_path = make_repo(tmp_path)
     make_case(runs_dir, cases_dir, "B99")
     monkeypatch.setattr(
@@ -575,9 +536,7 @@ def test_batch_with_case_errors_keeps_completed_evidence_and_rubric_data(
     )
     completed_run = "20261011T040000Z-B98"
 
-    def run_case(
-        case_id: str, repo_root: Path, runs_dir: Path | None = None, **kwargs: object
-    ) -> RunResult:
+    def run_case(case_id: str, repo_root: Path, runs_dir: Path | None = None, **kwargs: object) -> RunResult:
         assert runs_dir is not None
         if case_id == "B99":
             raise ValueError("pre-flight failure")

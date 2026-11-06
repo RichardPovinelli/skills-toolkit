@@ -55,7 +55,8 @@ POLICY_CHECKS = (
         "static-analysis-and-linting",
     ),
     PolicyCheck(
-        "Never write a test whose only assertion is that a value equals its current value", "test-driven-development"
+        "Never write a test whose only assertion is that a value equals its current value",
+        "test-driven-development",
     ),
 )
 
@@ -88,7 +89,7 @@ class ValidationPolicy:
     policy_checks: tuple[PolicyCheck, ...] = POLICY_CHECKS
 
     @classmethod
-    def from_file(cls, path: Path) -> "ValidationPolicy":
+    def from_file(cls, path: Path) -> ValidationPolicy:
         """Load a policy from TOML; unspecified keys keep their defaults."""
         raw = tomllib.loads(path.read_text(encoding="utf-8"))
         defaults = cls()
@@ -477,7 +478,11 @@ def main(
 
     if collection_policy.matrix is not None:
         errors.extend(
-            validate_matrix(skill_names, collection_root / collection_policy.matrix, policy=collection_policy)
+            validate_matrix(
+                skill_names,
+                collection_root / collection_policy.matrix,
+                policy=collection_policy,
+            )
         )
     errors.extend(validate_manifests(collection_root, policy=collection_policy))
     errors.extend(validate_readme(skill_names, collection_root, policy=collection_policy))

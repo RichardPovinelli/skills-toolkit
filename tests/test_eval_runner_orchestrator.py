@@ -6,7 +6,6 @@ from pathlib import Path
 from zoneinfo import ZoneInfo
 
 import pytest
-
 from skillkit.evals.runner import orchestrator, workspace
 from skillkit.evals.runner.driver import DriverResult
 
@@ -94,9 +93,7 @@ def test_run_case_passes_and_writes_all_artifacts(tmp_path):
     assert "skill:alpha" in (run / "conversation.log").read_text(encoding="utf-8")
 
 
-def test_run_case_default_path_uses_central_timestamp_and_validation_runs(
-    tmp_path, monkeypatch
-):
+def test_run_case_default_path_uses_central_timestamp_and_validation_runs(tmp_path, monkeypatch):
     repo = make_repo(tmp_path)
     write_case(repo)
     summer = datetime(2026, 7, 1, 12, 0, tzinfo=ZoneInfo("America/Chicago"))
@@ -167,9 +164,7 @@ def test_guard_failure_marks_run_and_propagates(tmp_path):
 
     marker = tmp_path / "runs" / "R4" / "FAILED_GUARD.md"
     assert marker.exists()
-    assert "plans" in marker.read_text(encoding="utf-8") or "leak" in marker.read_text(
-        encoding="utf-8"
-    )
+    assert "plans" in marker.read_text(encoding="utf-8") or "leak" in marker.read_text(encoding="utf-8")
 
 
 def test_run_case_writes_evidence_even_if_driver_crashes(tmp_path):
@@ -195,9 +190,7 @@ def test_run_case_writes_evidence_even_if_driver_crashes(tmp_path):
 
 
 def text_line(text: str, session: str = "ses_turns") -> str:
-    return json.dumps(
-        {"sessionID": session, "type": "text", "part": {"type": "text", "text": text}}
-    )
+    return json.dumps({"sessionID": session, "type": "text", "part": {"type": "text", "text": text}})
 
 
 def write_raw_case(repo: Path, body: str, case_id: str = "B98") -> None:
@@ -219,13 +212,9 @@ class ScriptedExecutor:
     def __call__(self, **kwargs):
         self.calls.append(kwargs)
         with open(kwargs["events_path"], "a", encoding="utf-8") as handle:
-            handle.writelines(
-                line + "\n" for line in self.turn_events[len(self.calls) - 1]
-            )
+            handle.writelines(line + "\n" for line in self.turn_events[len(self.calls) - 1])
         for name in self.turn_files.get(len(self.calls), []):
-            Path(kwargs["cwd"], name).write_text(
-                "def test_x(): pass\n", encoding="utf-8"
-            )
+            Path(kwargs["cwd"], name).write_text("def test_x(): pass\n", encoding="utf-8")
         return DriverResult(0, False)
 
 
@@ -298,9 +287,7 @@ def test_multiturn_continues_while_agent_asks_and_writes_turns_json(tmp_path) ->
     conversation = (result.run_dir / "conversation.log").read_text(encoding="utf-8")
     assert "user:Approved, add it." in conversation
 
-    metadata = json.loads(
-        (result.run_dir / "metadata.json").read_text(encoding="utf-8")
-    )
+    metadata = json.loads((result.run_dir / "metadata.json").read_text(encoding="utf-8"))
     assert metadata["turns"] == {
         "turn_count": 3,
         "replies_used": 2,
@@ -328,9 +315,7 @@ def test_multiturn_stops_when_agent_does_not_ask(tmp_path) -> None:
     )
 
     assert len(executor.calls) == 1
-    metadata = json.loads(
-        (result.run_dir / "metadata.json").read_text(encoding="utf-8")
-    )
+    metadata = json.loads((result.run_dir / "metadata.json").read_text(encoding="utf-8"))
     assert metadata["turns"] == {
         "turn_count": 1,
         "replies_used": 0,
@@ -381,9 +366,7 @@ def test_run_case_writes_report_json_on_pass(tmp_path):
         agent_root=tmp_path / "agent",
     )
 
-    report = json.loads(
-        (tmp_path / "runs" / "R9" / "report.json").read_text(encoding="utf-8")
-    )
+    report = json.loads((tmp_path / "runs" / "R9" / "report.json").read_text(encoding="utf-8"))
     assert report["case_id"] == "B98"
     assert report["outcome"] == "PASS"
     assert report["failures"] == []
@@ -441,9 +424,7 @@ def test_run_case_keeps_explicit_case_model_when_default_is_provided(tmp_path):
         model_reason="local-unreachable",
     )
 
-    report = json.loads(
-        (tmp_path / "runs" / "R12" / "report.json").read_text(encoding="utf-8")
-    )
+    report = json.loads((tmp_path / "runs" / "R12" / "report.json").read_text(encoding="utf-8"))
     assert report["model"] == "llama-router/pinned-model"
     assert report["host"] == "opencode/local-router"
     assert report["model_selection"]["reason"] == "explicit"
@@ -462,9 +443,7 @@ def test_run_case_writes_report_json_on_fail(tmp_path):
         agent_root=tmp_path / "agent",
     )
 
-    report = json.loads(
-        (tmp_path / "runs" / "R10" / "report.json").read_text(encoding="utf-8")
-    )
+    report = json.loads((tmp_path / "runs" / "R10" / "report.json").read_text(encoding="utf-8"))
     assert report["outcome"] == "FAIL"
     assert report["failures"]
 
@@ -478,9 +457,7 @@ def test_run_case_with_shims_exports_path_and_records_metadata(tmp_path):
     write_case(repo)
     case_path = repo / "validation" / "cases" / "B98.toml"
     case_path.write_text(
-        case_path.read_text(encoding="utf-8").replace(
-            'prompt = "do it"\n', 'prompt = "do it"\nshims = "fake-set"\n'
-        ),
+        case_path.read_text(encoding="utf-8").replace('prompt = "do it"\n', 'prompt = "do it"\nshims = "fake-set"\n'),
         encoding="utf-8",
     )
 
@@ -506,14 +483,10 @@ def test_run_case_with_shims_exports_path_and_records_metadata(tmp_path):
     staged = tmp_path / "runs" / "RSH" / "shim-env" / "fake-set"
     assert path_parts[0] == str(staged)
     assert (staged / "fake-tool").exists()
-    assert path_parts[1] == str(
-        (tmp_path / "runs" / "RSH" / "shim-state" / "bin").resolve()
-    )
+    assert path_parts[1] == str((tmp_path / "runs" / "RSH" / "shim-state" / "bin").resolve())
     assert Path(env["SHIM_STATE"]).is_dir()
     assert Path(env["SHIM_BIN"]).is_dir()
-    meta = json.loads(
-        (tmp_path / "runs" / "RSH" / "metadata.json").read_text(encoding="utf-8")
-    )
+    meta = json.loads((tmp_path / "runs" / "RSH" / "metadata.json").read_text(encoding="utf-8"))
     assert meta["shims"] == "fake-set"
     assert any(d.startswith("simulated-tool-env=fake-set") for d in meta["deviations"])
 
@@ -540,7 +513,5 @@ def test_run_case_without_shims_leaves_path_unchanged(tmp_path):
 
     assert "SHIM_STATE" not in seen["env"]
     assert seen["env"]["PATH"] == os.environ["PATH"]
-    meta = json.loads(
-        (tmp_path / "runs" / "RNS" / "metadata.json").read_text(encoding="utf-8")
-    )
+    meta = json.loads((tmp_path / "runs" / "RNS" / "metadata.json").read_text(encoding="utf-8"))
     assert "shims" not in meta

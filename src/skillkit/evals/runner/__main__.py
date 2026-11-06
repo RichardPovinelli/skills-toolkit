@@ -20,7 +20,14 @@ import sys
 from functools import partial
 from pathlib import Path
 
-from skillkit.evals.runner import batch, model_selection, orchestrator, review, spec, workspace
+from skillkit.evals.runner import (
+    batch,
+    model_selection,
+    orchestrator,
+    review,
+    spec,
+    workspace,
+)
 from skillkit.evals.runner.layout import CollectionLayout
 
 

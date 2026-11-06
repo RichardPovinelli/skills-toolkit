@@ -7,7 +7,6 @@ crash still yields an analyzable transcript.
 
 import json
 from dataclasses import dataclass
-from pathlib import PurePosixPath
 
 
 @dataclass(frozen=True)
@@ -91,7 +90,7 @@ def _consume_tool_use(
     return [(tool, tool_input)]
 
 
-_AWAIT_TRAILING = "\"')]}\""
+_AWAIT_TRAILING = '"\')]}"'
 
 
 def agent_awaits_user(facts: RunFacts) -> bool:

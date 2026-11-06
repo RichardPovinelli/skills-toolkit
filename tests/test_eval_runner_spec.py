@@ -3,7 +3,6 @@
 from pathlib import Path
 
 import pytest
-
 from skillkit.evals.runner import spec
 from skillkit.evals.runner.types import Check, Fixture, InlineFile
 
@@ -220,9 +219,7 @@ def test_load_case_rejects_absolute_inline_file_path(tmp_path: Path) -> None:
 
 
 @pytest.mark.parametrize("src", ["../outside.txt", "/etc/passwd", ""])
-def test_load_case_rejects_fixture_sources_outside_the_data_directory(
-    tmp_path: Path, src: str
-) -> None:
+def test_load_case_rejects_fixture_sources_outside_the_data_directory(tmp_path: Path, src: str) -> None:
     cases_dir = tmp_path / "cases"
     write_case(
         cases_dir,
@@ -261,6 +258,8 @@ def test_load_case_rejects_missing_id(tmp_path: Path) -> None:
 REPO_ROOT = Path(__file__).resolve().parent.parent
 REPO_CASES_DIR = REPO_ROOT / "validation" / "cases"
 CASE_CATALOG = REPO_ROOT / "validation" / "cases.md"
+
+
 def test_load_case_reads_state_and_skills_tree(tmp_path: Path) -> None:
     cases_dir = tmp_path / "cases"
     write_case(

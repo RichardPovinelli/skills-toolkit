@@ -277,13 +277,7 @@ def write_home_config(paths: RunPaths, model: str) -> None:
     elif provider == "opencode":
         # Use the built-in OpenCode provider and free-model catalog. The
         # synthetic HOME has no saved account; the free tier works without one.
-        config = "\n".join(
-            [
-                "{",
-                '  "$schema": "https://opencode.ai/config.json"',
-                "}",
-            ]
-        )
+        config = '{\n  "$schema": "https://opencode.ai/config.json"\n}'
     else:
         raise WorkspaceError(f"unsupported eval model provider {provider!r}: expected 'llama-router' or 'opencode'")
     (home_config_dir / "opencode.jsonc").write_text(config, encoding="utf-8")

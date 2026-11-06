@@ -4,7 +4,6 @@ import subprocess
 from pathlib import Path
 
 import pytest
-
 from skillkit.evals.runner import driver
 
 
@@ -18,9 +17,7 @@ class FakeCi:
         self.error = error
         self.calls: list[tuple[list[str], dict]] = []
 
-    def __call__(
-        self, argv: list[str], **kwargs: object
-    ) -> subprocess.CompletedProcess:
+    def __call__(self, argv: list[str], **kwargs: object) -> subprocess.CompletedProcess:
         self.calls.append((argv, kwargs))
         if self.error:
             raise self.error
@@ -32,7 +29,11 @@ class FakeCi:
 def run_paths(tmp_path: Path):
     workspace_dir = tmp_path / "run" / "workspace"
     workspace_dir.mkdir(parents=True)
-    return workspace_dir, tmp_path / "run" / "events.jsonl", tmp_path / "run" / "stderr.log"
+    return (
+        workspace_dir,
+        tmp_path / "run" / "events.jsonl",
+        tmp_path / "run" / "stderr.log",
+    )
 
 
 def test_run_opencode_builds_expected_command(run_paths) -> None:
@@ -142,7 +143,7 @@ def test_run_opencode_adds_session_flag_when_resuming(run_paths) -> None:
         session_id="ses_42",
     )
 
-    (argv, _), = fake.calls
+    ((argv, _),) = fake.calls
     assert argv == [
         "opencode",
         "run",
