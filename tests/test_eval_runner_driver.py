@@ -4,6 +4,7 @@ import subprocess
 from pathlib import Path
 
 import pytest
+
 from skillkit.evals.runner import driver
 
 
@@ -29,11 +30,7 @@ class FakeCi:
 def run_paths(tmp_path: Path):
     workspace_dir = tmp_path / "run" / "workspace"
     workspace_dir.mkdir(parents=True)
-    return (
-        workspace_dir,
-        tmp_path / "run" / "events.jsonl",
-        tmp_path / "run" / "stderr.log",
-    )
+    return workspace_dir, tmp_path / "run" / "events.jsonl", tmp_path / "run" / "stderr.log"
 
 
 def test_run_opencode_builds_expected_command(run_paths) -> None:

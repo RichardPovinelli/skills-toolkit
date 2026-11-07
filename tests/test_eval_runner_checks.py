@@ -129,12 +129,7 @@ def test_no_forbidden_reads_ignores_run_dir_and_allowed_paths():
 
 
 def test_no_forbidden_reads_flags_paths_escaping_allowed_roots():
-    ctx = make_ctx(
-        paths_touched=[
-            "/home/vscode/.claude/skills/alpha/SKILL.md",
-            "/repo/evals/fixtures/pipeline.sh",
-        ]
-    )
+    ctx = make_ctx(paths_touched=["/home/vscode/.claude/skills/alpha/SKILL.md", "/repo/evals/fixtures/pipeline.sh"])
     assert len(run_check("no_forbidden_reads", ctx)) == 2
 
 
