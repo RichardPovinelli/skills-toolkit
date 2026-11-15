@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "skillkit"
 description = "Structural validation and behavioral evaluation tooling for Agent Skill collections."
-requires-python = ">=3.11"
+requires-python = ">=3.15"
 license = { text = "MIT" }
 authors = [{ name = "Richard Povinelli" }]
 dependencies = ["pyyaml"]

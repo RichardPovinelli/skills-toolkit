@@ -57,7 +57,7 @@ def _read_report(run: Path) -> dict | None:
         return None
     try:
         data = json.loads(report.read_text(encoding="utf-8"))
-    except (OSError, ValueError):
+    except OSError, ValueError:
         return None
     return data if isinstance(data, dict) and "outcome" in data else None
 

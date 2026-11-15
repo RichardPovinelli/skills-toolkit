@@ -53,7 +53,7 @@ def probe_local_models(
     try:
         with opener.open(request, timeout=timeout_s) as response:
             payload = json.load(response)
-    except (OSError, TypeError, ValueError):
+    except OSError, TypeError, ValueError:
         return None
     if not isinstance(payload, dict):
         return None

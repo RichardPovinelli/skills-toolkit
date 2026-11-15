@@ -258,7 +258,7 @@ def _read_json(path: Path, sentinel=None):
     try:
         with path.open(encoding="utf-8") as stream:
             return json.load(stream)
-    except (OSError, json.JSONDecodeError):
+    except OSError, json.JSONDecodeError:
         return sentinel
 
 

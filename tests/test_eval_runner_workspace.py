@@ -4,7 +4,6 @@ from pathlib import Path
 from typing import Any
 
 import pytest
-
 from skillkit.evals.runner import workspace
 from skillkit.evals.runner.types import CaseSpec, Exposure, Fixture, InlineFile
 

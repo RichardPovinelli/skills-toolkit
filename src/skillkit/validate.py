@@ -16,7 +16,7 @@ import sys
 import tomllib
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, TypeAlias, cast
+from typing import Any, cast
 from urllib.parse import urlsplit
 
 import yaml
@@ -25,7 +25,7 @@ SKILL_LINK: re.Pattern[str] = re.compile(r"\[[^]]+\]\((\.\./[^)]+/SKILL\.md)\)")
 MARKDOWN_LINK: re.Pattern[str] = re.compile(r"\[[^]]+\]\(([^)#]+\.md)(?:#[^)]*)?\)")
 MATRIX_SKILL: re.Pattern[str] = re.compile(r"`([A-Za-z0-9_-]+)`")
 MATRIX_COMPANION: re.Pattern[str] = re.compile(r"`([A-Za-z0-9_-]+)`(?: \([^`]*\))?")
-JsonValue: TypeAlias = dict[str, Any] | list[Any] | str | int | float | bool | None
+type JsonValue = dict[str, Any] | list[Any] | str | int | float | bool | None
 
 # Policy files are read from this path under the collection root when present.
 DEFAULT_CONFIG_PATH = Path("validation") / "validate.toml"

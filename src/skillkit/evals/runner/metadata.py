@@ -34,7 +34,7 @@ def _git_text(run_git, args, repo_root) -> str | None:
             text=True,
             timeout=30,
         )
-    except (OSError, subprocess.SubprocessError):
+    except OSError, subprocess.SubprocessError:
         return None
     return proc.stdout if proc.returncode == 0 else None
 

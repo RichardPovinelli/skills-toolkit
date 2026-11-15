@@ -4,5 +4,5 @@
   "typeCheckingMode": "standard",
   "venvPath": ".",
   "venv": ".venv",
-  "pythonVersion": "3.11"
+  "pythonVersion": "3.15"
 }
