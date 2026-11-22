@@ -1,12 +1,26 @@
 """Shared immutable data types for the eval runner (imports nothing internal)."""
 
 from dataclasses import dataclass
+from enum import StrEnum
 
 LOCAL_MODEL = "llama-router/qwen3.8-27b-q6"
 FALLBACK_MODEL = "opencode/deepseek-v4.1-flash-free"
 DEFAULT_MODEL = LOCAL_MODEL
 DEFAULT_TIMEOUT_S = 600
 ROUTER_BASE_URL = "http://host.docker.internal:1235/v1"
+
+
+class Outcome(StrEnum):
+    """Automated verdict for one case or one aggregate batch row.
+
+    Serializes as the plain string value, so report artifacts keep their
+    existing format while runtime comparisons stop relying on bare literals.
+    """
+
+    PASS = "PASS"
+    FAIL = "FAIL"
+    SKIP = "SKIP"
+    ERROR = "ERROR"
 
 
 @dataclass(frozen=True)

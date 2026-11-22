@@ -15,6 +15,8 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
+from skillkit.evals.runner.types import Outcome
+
 CENTRAL_TZ = ZoneInfo("America/Chicago")
 
 
@@ -23,7 +25,7 @@ class CompletedRun:
     """A previous finished run found on disk."""
 
     run: Path
-    outcome: str
+    outcome: Outcome
 
 
 @dataclass(frozen=True)
@@ -31,7 +33,7 @@ class BatchEntry:
     """One row of the aggregate batch report."""
 
     case_id: str
-    outcome: str  # PASS | FAIL | SKIP | ERROR
+    outcome: Outcome
     run_dir: Path | None
     failures: tuple[str, ...] = ()
     note: str = ""
@@ -62,6 +64,14 @@ def _read_report(run: Path) -> dict | None:
     return data if isinstance(data, dict) and "outcome" in data else None
 
 
+def _parse_outcome(value: object) -> Outcome | None:
+    """Map an on-disk verdict to the enum; unknown values are not verdicts."""
+    try:
+        return Outcome(str(value))
+    except ValueError:
+        return None
+
+
 def discover_completed(runs_dir: Path, case_ids: list[str]) -> dict[str, CompletedRun]:
     """Map each case id to its most recent completed run under ``runs_dir``.
 
@@ -81,9 +91,12 @@ def discover_completed(runs_dir: Path, case_ids: list[str]) -> dict[str, Complet
             data = _read_report(run)
             if data is None:
                 continue
+            outcome = _parse_outcome(data["outcome"])
+            if outcome is None:
+                continue
             key = ((run / "report.json").stat().st_mtime_ns, run.name)
             if latest_key is None or key > latest_key:
-                latest = CompletedRun(run=run, outcome=str(data["outcome"]))
+                latest = CompletedRun(run=run, outcome=outcome)
                 latest_key = key
         if latest is not None:
             found[case_id] = latest
@@ -111,7 +124,7 @@ def run_batch(
             entries.append(
                 BatchEntry(
                     case_id=case_id,
-                    outcome="SKIP",
+                    outcome=Outcome.SKIP,
                     run_dir=prior.run,
                     note=f"earlier run: {prior.outcome}",
                     duration_s=_duration(prior.run),
@@ -124,7 +137,7 @@ def run_batch(
             entries.append(
                 BatchEntry(
                     case_id=case_id,
-                    outcome="ERROR",
+                    outcome=Outcome.ERROR,
                     run_dir=None,
                     failures=(f"{type(err).__name__}: {err}",),
                 )
@@ -134,7 +147,7 @@ def run_batch(
         entries.append(
             BatchEntry(
                 case_id=case_id,
-                outcome=str(result.outcome),  # type: ignore[attr-defined]
+                outcome=Outcome(str(result.outcome)),  # type: ignore[attr-defined]
                 run_dir=run_dir,
                 failures=tuple(result.failures),  # type: ignore[attr-defined]
                 duration_s=_duration(run_dir),
@@ -153,13 +166,13 @@ def write_aggregate(batch_dir: Path, entries: list[BatchEntry], *, started_centr
     """Write aggregate ``report.json`` + ``report.md`` into ``batch_dir``."""
     batch_dir = Path(batch_dir)
     batch_dir.mkdir(parents=True, exist_ok=True)
-    summary: dict[str, int] = {}
+    summary: dict[Outcome, int] = {}
     for entry in entries:
         summary[entry.outcome] = summary.get(entry.outcome, 0) + 1
 
     payload = {
         "started_central": started_central,
-        "summary": {k: summary.get(k, 0) for k in ("PASS", "FAIL", "SKIP", "ERROR")},
+        "summary": {str(outcome): summary.get(outcome, 0) for outcome in Outcome},
         "cases": [
             {
                 "case_id": e.case_id,

@@ -11,6 +11,7 @@ import pytest
 from skillkit.evals.runner import __main__ as runner_main
 from skillkit.evals.runner import batch, spec
 from skillkit.evals.runner.orchestrator import RunResult
+from skillkit.evals.runner.types import Outcome
 
 pytestmark = pytest.mark.usefixtures("local_model_choice")
 
@@ -100,21 +101,29 @@ def test_discover_ignores_malformed_reports_and_foreign_dirs(tmp_path):
     assert found == {}
 
 
+def test_discover_ignores_reports_with_unknown_outcome(tmp_path):
+    make_run(tmp_path, "20261011T010000Z-B02", "MAYBE")
+
+    found = batch.discover_completed(tmp_path, ["B02"])
+
+    assert found == {}
+
+
 # --- write_aggregate --------------------------------------------------------
 
 
 def make_entries():
     return [
-        batch.BatchEntry("B02", "PASS", Path("/r/R1"), (), duration_s=10.0),
+        batch.BatchEntry("B02", Outcome.PASS, Path("/r/R1"), (), duration_s=10.0),
         batch.BatchEntry(
             "B05",
-            "FAIL",
+            Outcome.FAIL,
             Path("/r/R2"),
             ("owner_read_any_of: missing",),
             duration_s=20.0,
         ),
-        batch.BatchEntry("B06", "SKIP", Path("/r/R0"), (), note="earlier run: PASS"),
-        batch.BatchEntry("B07", "ERROR", None, ("case file missing",)),
+        batch.BatchEntry("B06", Outcome.SKIP, Path("/r/R0"), (), note="earlier run: PASS"),
+        batch.BatchEntry("B07", Outcome.ERROR, None, ("case file missing",)),
     ]
 
 
@@ -157,7 +166,7 @@ def test_run_batch_skips_completed_unless_forced(tmp_path):
 
     def run_one(case_id, root, runs_dir=None):
         executed.append(case_id)
-        return RunResult(case_id, "PASS", tmp_path / "runs" / f"R-{case_id}", ())
+        return RunResult(case_id, Outcome.PASS, tmp_path / "runs" / f"R-{case_id}", ())
 
     entries = batch.run_batch(["B02", "B05"], tmp_path, tmp_path / "runs", run_one=run_one)
 
@@ -174,8 +183,8 @@ def test_run_batch_skips_completed_unless_forced(tmp_path):
 def test_run_batch_records_errors_without_aborting(tmp_path):
     run_one = fake_executors(
         B02=spec.SpecError("bad toml"),
-        B05=RunResult("B05", "FAIL", Path("/r/R2"), ("check: nope",)),
-        B06=RunResult("B06", "PASS", Path("/r/R3"), ()),
+        B05=RunResult("B05", Outcome.FAIL, Path("/r/R2"), ("check: nope",)),
+        B06=RunResult("B06", Outcome.PASS, Path("/r/R3"), ()),
     )
 
     entries = batch.run_batch(["B02", "B05", "B06"], tmp_path, tmp_path / "runs", run_one=run_one)
@@ -190,7 +199,7 @@ def test_run_batch_writes_no_batch_dir_internals_on_error_cases(tmp_path):
         ["B06"],
         tmp_path,
         tmp_path / "runs",
-        run_one=fake_executors(B06=RunResult("B06", "PASS", Path("/r"), ())),
+        run_one=fake_executors(B06=RunResult("B06", Outcome.PASS, Path("/r"), ())),
     )
     assert entries[0].outcome == "PASS"
     assert not (tmp_path / "runs" / "20261011T090000Z-batch").exists()
@@ -211,7 +220,7 @@ def test_cli_all_expands_case_dir_and_writes_aggregate(tmp_path, monkeypatch):
     monkeypatch.setattr(
         runner_main.orchestrator,
         "run_case",
-        lambda cid, root, runs_dir=None, **kwargs: RunResult(cid, "PASS", (tmp_path / "runs" / f"R-{cid}"), ()),
+        lambda cid, root, runs_dir=None, **kwargs: RunResult(cid, Outcome.PASS, (tmp_path / "runs" / f"R-{cid}"), ()),
     )
     monkeypatch.setattr(runner_main.batch, "central_iso", lambda: "2026-10-11T09:00:00-05:00")
     monkeypatch.setattr(
@@ -243,7 +252,7 @@ def test_cli_single_id_has_no_batch_dir(tmp_path, monkeypatch):
     monkeypatch.setattr(
         runner_main.orchestrator,
         "run_case",
-        lambda cid, root, runs_dir=None, **kwargs: RunResult(cid, "PASS", tmp_path / "r", ()),
+        lambda cid, root, runs_dir=None, **kwargs: RunResult(cid, Outcome.PASS, tmp_path / "r", ()),
     )
     out = io.StringIO()
     with redirect_stdout(out):
@@ -257,7 +266,7 @@ def test_cli_multi_id_batch_force_flag_plumbed(tmp_path, monkeypatch):
 
     def fake(cid, root, runs_dir=None, **kwargs):
         seen.setdefault("ids", []).append(cid)
-        return RunResult(cid, "FAIL", tmp_path / "r" / cid, ("x: y",))
+        return RunResult(cid, Outcome.FAIL, tmp_path / "r" / cid, ("x: y",))
 
     monkeypatch.setattr(runner_main.orchestrator, "run_case", fake)
     make_run(tmp_path / "runs", "20261011T010000Z-B02", "PASS")

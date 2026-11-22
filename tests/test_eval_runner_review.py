@@ -9,6 +9,7 @@ import pytest
 from skillkit.evals.runner import __main__ as runner_main
 from skillkit.evals.runner import review
 from skillkit.evals.runner.orchestrator import RunResult
+from skillkit.evals.runner.types import Outcome
 
 pytestmark = pytest.mark.usefixtures("local_model_choice")
 
@@ -228,7 +229,7 @@ def test_non_dict_report_degrades_verdict_section(tmp_path, monkeypatch):
     root, runs_dir, cases_dir, out_path, scores_path = make_repo(tmp_path)
     run = make_completed_run(runs_dir, "20261011T020000Z-B98", "PASS")
     (run / "report.json").write_text("null", encoding="utf-8")
-    done = review.batch.CompletedRun(run=run, outcome="PASS")
+    done = review.batch.CompletedRun(run=run, outcome=Outcome.PASS)
     monkeypatch.setattr(review.batch, "discover_completed", lambda runs_dir, case_ids: {"B98": done})
 
     md = generate(root, runs_dir, cases_dir, out_path, scores_path)
@@ -541,7 +542,7 @@ def test_batch_with_case_errors_keeps_completed_evidence_and_rubric_data(tmp_pat
         if case_id == "B99":
             raise ValueError("pre-flight failure")
         run = make_completed_run(runs_dir, completed_run, "PASS")
-        return RunResult(case_id, "PASS", run, ())
+        return RunResult(case_id, Outcome.PASS, run, ())
 
     monkeypatch.setattr(runner_main.orchestrator, "run_case", run_case)
     with redirect_stdout(io.StringIO()), redirect_stderr(io.StringIO()):

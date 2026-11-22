@@ -11,7 +11,8 @@ from __future__ import annotations
 import json
 import os
 import time
-from dataclasses import dataclass, replace
+from copy import replace
+from dataclasses import dataclass
 from pathlib import Path
 
 from skillkit.evals.runner import (
@@ -25,7 +26,7 @@ from skillkit.evals.runner import (
     workspace,
 )
 from skillkit.evals.runner.layout import CollectionLayout
-from skillkit.evals.runner.types import DEFAULT_MODEL, CaseSpec
+from skillkit.evals.runner.types import DEFAULT_MODEL, CaseSpec, Outcome
 
 
 def _deviations_for(case: CaseSpec, requested_model: str, model_reason: str) -> list[str]:
@@ -55,7 +56,7 @@ class RunResult:
     """Outcome of one evaluated case."""
 
     case_id: str
-    outcome: str  # "PASS" or "FAIL"
+    outcome: Outcome
     run_dir: Path
     failures: tuple[str, ...]
 
@@ -195,7 +196,7 @@ def run_case(
         protected_dir_names=paths.collection.protected_dir_names,
     )
     failures = _failure_list(case, results, ctx)
-    outcome = "PASS" if not failures else "FAIL"
+    outcome = Outcome.FAIL if failures else Outcome.PASS
     _write_report(
         paths,
         case,
@@ -212,7 +213,7 @@ def run_case(
 def _write_report(
     paths: workspace.RunPaths,
     case: CaseSpec,
-    outcome: str,
+    outcome: Outcome,
     failures: tuple[str, ...],
     duration_s: float,
     *,

@@ -29,6 +29,7 @@ from skillkit.evals.runner import (
     workspace,
 )
 from skillkit.evals.runner.layout import CollectionLayout
+from skillkit.evals.runner.types import Outcome
 
 
 def _add_layout_arguments(parser: argparse.ArgumentParser) -> None:
@@ -231,7 +232,7 @@ def _run_single(
         print(f"  - {failure}", file=sys.stderr)
     if not skip_review:
         _refresh_review(layout, runs_dir)
-    return 0 if result.outcome == "PASS" else 1
+    return 0 if result.outcome == Outcome.PASS else 1
 
 
 def _run_batch(
@@ -269,7 +270,7 @@ def _run_batch(
     print(f"Batch report: {md_path}")
     if not skip_review:
         _refresh_review(layout, runs_dir)
-    bad = sum(1 for e in entries if e.outcome in ("FAIL", "ERROR"))
+    bad = sum(1 for e in entries if e.outcome in (Outcome.FAIL, Outcome.ERROR))
     return 1 if bad else 0
 
 

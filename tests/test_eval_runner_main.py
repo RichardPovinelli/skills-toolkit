@@ -9,6 +9,7 @@ from skillkit.evals.runner import __main__ as runner_main
 from skillkit.evals.runner import spec, workspace
 from skillkit.evals.runner.model_selection import ModelChoice
 from skillkit.evals.runner.orchestrator import RunResult
+from skillkit.evals.runner.types import Outcome
 
 pytestmark = pytest.mark.usefixtures("local_model_choice")
 
@@ -25,7 +26,7 @@ def test_single_case_defaults_collection_to_working_directory(tmp_path, monkeypa
         case = spec.load_case(case_id, root / "validation" / "cases")
         seen["root"] = root
         seen["runs_dir"] = runs_dir
-        return RunResult(case.case_id, "PASS", runs_dir / "R1", ())
+        return RunResult(case.case_id, Outcome.PASS, runs_dir / "R1", ())
 
     monkeypatch.setattr(runner_main.orchestrator, "run_case", fake_run_case)
     monkeypatch.setattr(runner_main.review, "generate", lambda **kwargs: "")
@@ -47,7 +48,7 @@ def test_collection_flag_selects_another_checkout(tmp_path, monkeypatch):
         assert runs_dir is not None
         seen["root"] = root
         seen["runs_dir"] = runs_dir
-        return RunResult(case_id, "PASS", runs_dir / "R1", ())
+        return RunResult(case_id, Outcome.PASS, runs_dir / "R1", ())
 
     monkeypatch.setattr(runner_main.orchestrator, "run_case", fake_run_case)
     monkeypatch.setattr(runner_main.review, "generate", lambda **kwargs: "")
@@ -98,7 +99,7 @@ def test_all_discovers_cases_independent_of_launch_directory(tmp_path, monkeypat
         assert runs_dir is not None
         case = spec.load_case(case_id, root / "validation" / "cases")
         seen.append((case.case_id, root, runs_dir))
-        return RunResult(case.case_id, "PASS", runs_dir / case.case_id, ())
+        return RunResult(case.case_id, Outcome.PASS, runs_dir / case.case_id, ())
 
     monkeypatch.setattr(runner_main.orchestrator, "run_case", fake_run_case)
     monkeypatch.setattr(runner_main.review, "generate", lambda **kwargs: "")
@@ -114,7 +115,7 @@ def test_prints_result_line_and_exits_zero(tmp_path, monkeypatch):
 
     def fake_run_case(case_id, root, runs_dir=None, **kwargs):
         seen["args"] = (case_id, str(root), runs_dir)
-        return RunResult(case_id, "PASS", tmp_path / "runs" / "R1", ())
+        return RunResult(case_id, Outcome.PASS, tmp_path / "runs" / "R1", ())
 
     monkeypatch.setattr(runner_main.orchestrator, "run_case", fake_run_case)
     out = io.StringIO()
@@ -129,7 +130,7 @@ def test_fail_exits_one_and_prints_failures(tmp_path, monkeypatch):
     monkeypatch.setattr(
         runner_main.orchestrator,
         "run_case",
-        lambda *a, **k: RunResult("B98", "FAIL", tmp_path / "r", ("owner_read_any_of: x",)),
+        lambda *a, **k: RunResult("B98", Outcome.FAIL, tmp_path / "r", ("owner_read_any_of: x",)),
     )
     err = io.StringIO()
     with redirect_stderr(err):
@@ -146,7 +147,7 @@ def test_single_runs_use_validation_runs_and_unique_timestamped_briefs(tmp_path,
 
     def fake_run_case(case_id, root, runs_dir=None, **kwargs):
         seen.setdefault("runs_dirs", []).append(runs_dir)
-        return RunResult(case_id, "FAIL", tmp_path / "runs" / "R1", ("check failed",))
+        return RunResult(case_id, Outcome.FAIL, tmp_path / "runs" / "R1", ("check failed",))
 
     def fake_generate(**kwargs):
         seen.setdefault("out_paths", []).append(kwargs["out_path"])
@@ -196,7 +197,7 @@ def test_skip_review_returns_result_without_starting_review(tmp_path, monkeypatc
     monkeypatch.setattr(
         runner_main.orchestrator,
         "run_case",
-        lambda cid, root, runs_dir=None, **kwargs: RunResult(cid, "PASS", runs_dir / cid, ()),
+        lambda cid, root, runs_dir=None, **kwargs: RunResult(cid, Outcome.PASS, runs_dir / cid, ()),
     )
 
     def forbidden_review(**kwargs):
@@ -221,7 +222,7 @@ def test_main_passes_resolved_model_to_single_run_and_prints_selection(tmp_path,
 
     def fake_run_case(case_id, root, runs_dir=None, **kwargs):
         seen.update(kwargs)
-        return RunResult(case_id, "PASS", tmp_path / "runs" / "R1", ())
+        return RunResult(case_id, Outcome.PASS, tmp_path / "runs" / "R1", ())
 
     monkeypatch.setattr(runner_main.orchestrator, "run_case", fake_run_case)
     err = io.StringIO()
@@ -246,7 +247,7 @@ def test_main_model_flag_requests_an_explicit_model(tmp_path, monkeypatch):
     monkeypatch.setattr(
         runner_main.orchestrator,
         "run_case",
-        lambda cid, root, runs_dir=None, **kwargs: RunResult(cid, "PASS", tmp_path / "runs" / "R1", ()),
+        lambda cid, root, runs_dir=None, **kwargs: RunResult(cid, Outcome.PASS, tmp_path / "runs" / "R1", ()),
     )
 
     assert (
@@ -280,7 +281,7 @@ def test_main_free_fallback_runs_without_credentials(tmp_path, monkeypatch):
 
     def fake_run_case(case_id, root, runs_dir=None, **kwargs):
         seen.update(kwargs)
-        return RunResult(case_id, "PASS", tmp_path / "runs" / "R1", ())
+        return RunResult(case_id, Outcome.PASS, tmp_path / "runs" / "R1", ())
 
     monkeypatch.setattr(runner_main.orchestrator, "run_case", fake_run_case)
     err = io.StringIO()
@@ -303,7 +304,7 @@ def test_main_batch_passes_resolved_model_to_every_case(tmp_path, monkeypatch):
     def fake_run_case(case_id: str, root: Path, runs_dir: Path | None = None, **kwargs: object) -> RunResult:
         assert runs_dir is not None
         seen.append((case_id, kwargs.get("default_model"), kwargs.get("model_reason")))
-        return RunResult(case_id, "PASS", runs_dir / case_id, ())
+        return RunResult(case_id, Outcome.PASS, runs_dir / case_id, ())
 
     monkeypatch.setattr(runner_main.orchestrator, "run_case", fake_run_case)
 
