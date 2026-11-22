@@ -2,6 +2,7 @@
 
 from pathlib import Path
 
+import pytest
 from skillkit.evals.runner.layout import CollectionLayout
 
 
@@ -61,3 +62,20 @@ def test_protected_directory_name_follows_the_data_root(tmp_path: Path) -> None:
     layout = CollectionLayout.from_root(tmp_path, data_root=tmp_path / "evals")
 
     assert layout.protected_dir_names == frozenset({"evals"})
+
+
+def test_relative_root_and_overrides_resolve_to_absolute_paths(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.chdir(tmp_path)
+
+    layout = CollectionLayout.from_root(Path("."), data_root=Path("evals"))
+    resolved = tmp_path.resolve()
+
+    assert layout.root == resolved
+    assert layout.skills_dir == resolved / "skills"
+    assert layout.data_root == resolved / "evals"
+    assert layout.cases_dir == resolved / "evals" / "cases"
+    assert layout.runs_dir == resolved / "validation-runs"
+    assert layout.reports_dir == resolved / "reports"

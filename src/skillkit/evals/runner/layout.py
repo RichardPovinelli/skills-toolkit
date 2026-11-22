@@ -45,18 +45,18 @@ class CollectionLayout:
         reports_dir: Path | None = None,
     ) -> CollectionLayout:
         """Resolve a collection layout from the collection root."""
-        root = Path(root)
-        resolved_data_root = Path(data_root or root / DATA_DIRNAME)
-        resolved_skills = Path(skills_dir or root / SKILLS_DIRNAME)
+        root = Path(root).resolve()
+        resolved_data_root = Path(data_root or root / DATA_DIRNAME).resolve()
+        resolved_skills = Path(skills_dir or root / SKILLS_DIRNAME).resolve()
         return cls(
             root=root,
             skills_dir=resolved_skills,
             data_root=resolved_data_root,
-            cases_dir=Path(cases_dir or resolved_data_root / "cases"),
-            state_dir=Path(state_dir or resolved_data_root / "state"),
-            rubric_path=Path(rubric_path or resolved_data_root / "rubric.md"),
-            runs_dir=Path(runs_dir or root / RUNS_DIRNAME),
-            reports_dir=Path(reports_dir or root / REPORTS_DIRNAME),
+            cases_dir=Path(cases_dir or resolved_data_root / "cases").resolve(),
+            state_dir=Path(state_dir or resolved_data_root / "state").resolve(),
+            rubric_path=Path(rubric_path or resolved_data_root / "rubric.md").resolve(),
+            runs_dir=Path(runs_dir or root / RUNS_DIRNAME).resolve(),
+            reports_dir=Path(reports_dir or root / REPORTS_DIRNAME).resolve(),
             # The graded data directory is the one directory name whose mention
             # in agent output is treated as a leak.
             protected_dir_names=frozenset({resolved_data_root.name}),

@@ -100,7 +100,11 @@ def _paths_changed(ctx: CheckContext, params: dict) -> list[str]:
     return [f"expected workspace path to change: {path}" for path in missing]
 
 
-def _forbidden_in_prose(text: str, protected_dir_names: frozenset[str]) -> str | None:
+def _forbidden_in_prose(
+    text: str,
+    protected_dir_names: frozenset[str],
+    allow_prose_names: frozenset[str] = frozenset(),
+) -> str | None:
     """Find protected eval material mentioned in free text.
 
     Prose may legitimately discuss provisioned project documents that live
@@ -114,6 +118,8 @@ def _forbidden_in_prose(text: str, protected_dir_names: frozenset[str]) -> str |
         if "/" not in cleaned and "." not in cleaned:
             continue
         for segment in cleaned.split("/"):
+            if segment in allow_prose_names:
+                continue
             if segment in PROTECTED_FILES or segment in protected_dir_names:
                 return segment
     return None
@@ -130,6 +136,10 @@ def _under_allowed(path: str, ctx: CheckContext) -> bool:
 
 def _no_forbidden_reads(ctx: CheckContext, params: dict) -> list[str]:
     failures: list[str] = []
+    raw_allow = params.get("allow_prose_names", ())
+    allow_prose_names = (
+        frozenset(str(name) for name in raw_allow) if isinstance(raw_allow, (list, tuple, set, frozenset)) else frozenset()
+    )
     for path in ctx.facts.paths_touched:
         if path == ctx.run_dir or path.startswith(ctx.run_dir + "/"):
             continue
@@ -149,7 +159,7 @@ def _no_forbidden_reads(ctx: CheckContext, params: dict) -> list[str]:
         # protected data tree; normalise it away before the prose scan,
         # mirroring the run-dir allowance for tool paths above.
         text = entry[1].replace(ctx.run_dir, "<run-dir>")
-        hit = _forbidden_in_prose(text, ctx.protected_dir_names)
+        hit = _forbidden_in_prose(text, ctx.protected_dir_names, allow_prose_names)
         if hit is not None:
             failures.append(f"assistant output mentions protected material '{hit}'")
     return failures

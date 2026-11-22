@@ -383,3 +383,14 @@ def test_lives_outside_workspace_paths_are_still_flagged():
     ctx = make_ctx(paths_touched=["/elsewhere/plans/secret.md"])
 
     assert run_check("no_forbidden_reads", ctx) != []
+
+
+def test_no_forbidden_reads_allows_explicit_prose_names():
+    ctx = make_ctx(texts=["skill-authoring-maintenance cites skill-trigger-ownership-matrix.md"])
+    assert run_check("no_forbidden_reads", ctx, allow_prose_names=["skill-trigger-ownership-matrix.md"]) == []
+
+    # Unlisted protected names and outside-workspace reads remain blocked.
+    ctx_rubric = make_ctx(texts=["see rubric.md and skill-trigger-ownership-matrix.md"])
+    assert len(run_check("no_forbidden_reads", ctx_rubric, allow_prose_names=["skill-trigger-ownership-matrix.md"])) == 1
+    ctx_read = make_ctx(paths_touched=["/repo/skill-trigger-ownership-matrix.md"])
+    assert len(run_check("no_forbidden_reads", ctx_read, allow_prose_names=["skill-trigger-ownership-matrix.md"])) == 1
