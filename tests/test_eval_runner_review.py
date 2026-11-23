@@ -2,8 +2,10 @@
 
 import io
 import json
+import subprocess
 from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 from skillkit.evals.runner import __main__ as runner_main
@@ -156,7 +158,23 @@ def generate(root, runs_dir, cases_dir, out_path, scores_path):
 
 @pytest.fixture(autouse=True)
 def opencode_unavailable_by_default(monkeypatch):
-    monkeypatch.setattr(review.shutil, "which", lambda executable: None)
+    """Disable discovery in review only, without mutating shared shutil."""
+    monkeypatch.setattr(review, "shutil", SimpleNamespace(which=lambda executable: None))
+
+
+@pytest.fixture
+def opencode_process(monkeypatch, opencode_unavailable_by_default):
+    """Bind a per-test process callback at review's external CLI boundary."""
+
+    def install(run):
+        monkeypatch.setattr(review.shutil, "which", lambda executable: "/usr/bin/opencode")
+        monkeypatch.setattr(
+            review,
+            "subprocess",
+            SimpleNamespace(run=run, DEVNULL=subprocess.DEVNULL, SubprocessError=subprocess.SubprocessError),
+        )
+
+    return install
 
 
 # --- section content ---------------------------------------------------------
@@ -321,7 +339,7 @@ def test_llm_analysis_placeholder_when_model_unavailable(tmp_path, monkeypatch):
     assert "model unavailable" in md.lower()
 
 
-def test_model_analysis_parses_opencode_jsonl_and_includes_events(tmp_path, monkeypatch):
+def test_model_analysis_parses_opencode_jsonl_and_includes_events(tmp_path, opencode_process):
     _, runs_dir, cases_dir, _, _ = make_repo(tmp_path)
     set_case_model(cases_dir, "llama-router/test-model")
     make_completed_run(runs_dir, "20261011T020000Z-B98", "PASS", model="llama-router/test-model")
@@ -333,15 +351,14 @@ def test_model_analysis_parses_opencode_jsonl_and_includes_events(tmp_path, monk
         captured["prompt"] = argv[-1]
         captured["cwd"] = kwargs["cwd"]
         captured["env"] = kwargs["env"]
-        return review.subprocess.CompletedProcess(
+        return subprocess.CompletedProcess(
             argv,
             0,
             stdout='{"type":"text","part":{"text":"Evidence supports the outcome."}}\n',
             stderr="",
         )
 
-    monkeypatch.setattr(review.shutil, "which", lambda executable: "/usr/bin/opencode")
-    monkeypatch.setattr(review.subprocess, "run", fake_run)
+    opencode_process(fake_run)
 
     text = review._model_analysis_text("B98", review.spec.load_case("B98", cases_dir), completed, {})
 
@@ -358,16 +375,15 @@ def test_model_analysis_parses_opencode_jsonl_and_includes_events(tmp_path, monk
     assert "ses_1" in captured["prompt"]
 
 
-def test_failed_opencode_process_renders_unavailable_analysis(tmp_path, monkeypatch):
+def test_failed_opencode_process_renders_unavailable_analysis(tmp_path, opencode_process):
     root, runs_dir, cases_dir, out_path, scores_path = make_repo(tmp_path)
     set_case_model(cases_dir, "llama-router/test-model")
     make_completed_run(runs_dir, "20261011T020000Z-B98", "PASS", model="llama-router/test-model")
 
     def failed_run(argv, **kwargs):
-        return review.subprocess.CompletedProcess(argv, 1, stdout="", stderr="connection refused")
+        return subprocess.CompletedProcess(argv, 1, stdout="", stderr="connection refused")
 
-    monkeypatch.setattr(review.shutil, "which", lambda executable: "/usr/bin/opencode")
-    monkeypatch.setattr(review.subprocess, "run", failed_run)
+    opencode_process(failed_run)
 
     md = generate(root, runs_dir, cases_dir, out_path, scores_path)
 
@@ -376,7 +392,7 @@ def test_failed_opencode_process_renders_unavailable_analysis(tmp_path, monkeypa
     assert "connection refused" not in analysis
 
 
-def test_non_local_model_is_not_used_for_review_analysis(tmp_path, monkeypatch):
+def test_non_local_model_is_not_used_for_review_analysis(tmp_path, opencode_process):
     root, runs_dir, cases_dir, out_path, scores_path = make_repo(tmp_path)
     set_case_model(cases_dir, "openai/review-model")
     make_completed_run(runs_dir, "20261011T020000Z-B98", "PASS", model="openai/review-model")
@@ -387,8 +403,7 @@ def test_non_local_model_is_not_used_for_review_analysis(tmp_path, monkeypatch):
         called = True
         raise AssertionError("review evidence must not be sent to a non-local model")
 
-    monkeypatch.setattr(review.shutil, "which", lambda executable: "/usr/bin/opencode")
-    monkeypatch.setattr(review.subprocess, "run", forbidden_run)
+    opencode_process(forbidden_run)
 
     md = generate(root, runs_dir, cases_dir, out_path, scores_path)
 
@@ -396,7 +411,7 @@ def test_non_local_model_is_not_used_for_review_analysis(tmp_path, monkeypatch):
     assert not called
 
 
-def test_review_analysis_uses_report_model_and_skips_hosted_runs(tmp_path, monkeypatch):
+def test_review_analysis_uses_report_model_and_skips_hosted_runs(tmp_path, opencode_process):
     root, runs_dir, cases_dir, out_path, scores_path = make_repo(tmp_path)
     set_case_model(cases_dir, "llama-router/test-model")
     make_completed_run(
@@ -412,8 +427,7 @@ def test_review_analysis_uses_report_model_and_skips_hosted_runs(tmp_path, monke
         called = True
         raise AssertionError("review evidence must not be sent to a hosted model")
 
-    monkeypatch.setattr(review.shutil, "which", lambda executable: "/usr/bin/opencode")
-    monkeypatch.setattr(review.subprocess, "run", forbidden_run)
+    opencode_process(forbidden_run)
 
     md = generate(root, runs_dir, cases_dir, out_path, scores_path)
 
@@ -422,7 +436,7 @@ def test_review_analysis_uses_report_model_and_skips_hosted_runs(tmp_path, monke
     assert not called
 
 
-def test_unreadable_required_analysis_evidence_is_not_summarized(tmp_path, monkeypatch):
+def test_unreadable_required_analysis_evidence_is_not_summarized(tmp_path, opencode_process):
     root, runs_dir, cases_dir, out_path, scores_path = make_repo(tmp_path)
     set_case_model(cases_dir, "llama-router/test-model")
     run = make_completed_run(runs_dir, "20261011T020000Z-B98", "PASS", model="llama-router/test-model")
@@ -434,8 +448,7 @@ def test_unreadable_required_analysis_evidence_is_not_summarized(tmp_path, monke
         called = True
         raise AssertionError("analysis must not treat malformed evidence as complete")
 
-    monkeypatch.setattr(review.shutil, "which", lambda executable: "/usr/bin/opencode")
-    monkeypatch.setattr(review.subprocess, "run", forbidden_run)
+    opencode_process(forbidden_run)
 
     md = generate(root, runs_dir, cases_dir, out_path, scores_path)
 

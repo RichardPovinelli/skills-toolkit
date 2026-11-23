@@ -3,6 +3,7 @@
 import io
 from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 from skillkit.evals.runner import __main__ as runner_main
@@ -14,7 +15,18 @@ from skillkit.evals.runner.types import Outcome
 pytestmark = pytest.mark.usefixtures("local_model_choice")
 
 
-def test_single_case_defaults_collection_to_working_directory(tmp_path, monkeypatch):
+@pytest.fixture
+def collection_dispatch(monkeypatch):
+    """Replace CLI dispatch only; keep collection discovery and loading real."""
+
+    def install(run_case):
+        monkeypatch.setattr(runner_main, "orchestrator", SimpleNamespace(run_case=run_case))
+        monkeypatch.setattr(runner_main, "review", SimpleNamespace(generate=lambda **kwargs: ""))
+
+    return install
+
+
+def test_single_case_defaults_collection_to_working_directory(tmp_path, monkeypatch, collection_dispatch):
     cases_dir = tmp_path / "validation" / "cases"
     cases_dir.mkdir(parents=True)
     (cases_dir / "B05.toml").write_text('id = "B05"\nprompt = "test"\n')
@@ -28,15 +40,14 @@ def test_single_case_defaults_collection_to_working_directory(tmp_path, monkeypa
         seen["runs_dir"] = runs_dir
         return RunResult(case.case_id, Outcome.PASS, runs_dir / "R1", ())
 
-    monkeypatch.setattr(runner_main.orchestrator, "run_case", fake_run_case)
-    monkeypatch.setattr(runner_main.review, "generate", lambda **kwargs: "")
+    collection_dispatch(fake_run_case)
 
     assert runner_main.main(["B05"]) == 0
     assert seen == {"root": tmp_path, "runs_dir": tmp_path / "validation-runs"}
     assert (tmp_path / "reports").is_dir()
 
 
-def test_collection_flag_selects_another_checkout(tmp_path, monkeypatch):
+def test_collection_flag_selects_another_checkout(tmp_path, monkeypatch, collection_dispatch):
     collection = tmp_path / "collection"
     cases_dir = collection / "validation" / "cases"
     cases_dir.mkdir(parents=True)
@@ -50,8 +61,7 @@ def test_collection_flag_selects_another_checkout(tmp_path, monkeypatch):
         seen["runs_dir"] = runs_dir
         return RunResult(case_id, Outcome.PASS, runs_dir / "R1", ())
 
-    monkeypatch.setattr(runner_main.orchestrator, "run_case", fake_run_case)
-    monkeypatch.setattr(runner_main.review, "generate", lambda **kwargs: "")
+    collection_dispatch(fake_run_case)
 
     assert runner_main.main(["B05", "--collection", str(collection), "--skip-review"]) == 0
     assert seen["root"] == collection
@@ -86,7 +96,7 @@ def test_list_reports_an_empty_collection(tmp_path):
 
 
 @pytest.mark.parametrize("launch_dir", [".", "validation", "validation/cases"])
-def test_all_discovers_cases_independent_of_launch_directory(tmp_path, monkeypatch, launch_dir):
+def test_all_discovers_cases_independent_of_launch_directory(tmp_path, monkeypatch, collection_dispatch, launch_dir):
     cases_dir = tmp_path / "validation" / "cases"
     cases_dir.mkdir(parents=True)
     for case_id in ("B05", "B02"):
@@ -101,8 +111,7 @@ def test_all_discovers_cases_independent_of_launch_directory(tmp_path, monkeypat
         seen.append((case.case_id, root, runs_dir))
         return RunResult(case.case_id, Outcome.PASS, runs_dir / case.case_id, ())
 
-    monkeypatch.setattr(runner_main.orchestrator, "run_case", fake_run_case)
-    monkeypatch.setattr(runner_main.review, "generate", lambda **kwargs: "")
+    collection_dispatch(fake_run_case)
 
     assert runner_main.main(["--all", "--collection", str(tmp_path)]) == 0
     assert seen == [(case_id, tmp_path, tmp_path / "validation-runs") for case_id in ("B02", "B05")]

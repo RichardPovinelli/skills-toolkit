@@ -19,32 +19,28 @@ pytestmark = pytest.mark.usefixtures("local_model_choice")
 # --- timestamps --------------------------------------------------------------
 
 
-def test_central_stamp_uses_cdt_in_summer(monkeypatch):
-    summer = datetime(2026, 7, 1, 12, 0, tzinfo=ZoneInfo("America/Chicago"))
-    monkeypatch.setattr(batch, "central_now", lambda: summer, raising=False)
+@pytest.mark.parametrize(
+    ("month", "day", "expected"),
+    [(7, 1, "2026-07-01-T12-00-00-CDT"), (1, 15, "2026-01-15-T12-00-00-CST")],
+    ids=["summer", "winter"],
+)
+def test_central_stamp(monkeypatch, month, day, expected):
+    instant = datetime(2026, month, day, 12, 0, tzinfo=ZoneInfo("America/Chicago"))
+    monkeypatch.setattr(batch, "central_now", lambda: instant)
 
-    assert batch.central_stamp() == "2026-07-01-T12-00-00-CDT"
-
-
-def test_central_stamp_uses_cst_in_winter(monkeypatch):
-    winter = datetime(2026, 1, 15, 12, 0, tzinfo=ZoneInfo("America/Chicago"))
-    monkeypatch.setattr(batch, "central_now", lambda: winter, raising=False)
-
-    assert batch.central_stamp() == "2026-01-15-T12-00-00-CST"
+    assert batch.central_stamp() == expected
 
 
-def test_central_iso_includes_central_offset(monkeypatch):
-    summer = datetime(2026, 7, 1, 12, 0, tzinfo=ZoneInfo("America/Chicago"))
-    monkeypatch.setattr(batch, "central_now", lambda: summer, raising=False)
+@pytest.mark.parametrize(
+    ("month", "day", "expected"),
+    [(7, 1, "2026-07-01T12:00:00-05:00"), (1, 15, "2026-01-15T12:00:00-06:00")],
+    ids=["summer", "winter"],
+)
+def test_central_iso(monkeypatch, month, day, expected):
+    instant = datetime(2026, month, day, 12, 0, tzinfo=ZoneInfo("America/Chicago"))
+    monkeypatch.setattr(batch, "central_now", lambda: instant)
 
-    assert batch.central_iso() == "2026-07-01T12:00:00-05:00"
-
-
-def test_central_iso_uses_cst_offset_in_winter(monkeypatch):
-    winter = datetime(2026, 1, 15, 12, 0, tzinfo=ZoneInfo("America/Chicago"))
-    monkeypatch.setattr(batch, "central_now", lambda: winter, raising=False)
-
-    assert batch.central_iso() == "2026-01-15T12:00:00-06:00"
+    assert batch.central_iso() == expected
 
 
 def make_run(runs_dir: Path, name: str, outcome: str | None = "PASS") -> Path:
